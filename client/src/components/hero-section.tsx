@@ -7,6 +7,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useLocation } from "wouter";
 import type { Event } from "@shared/schema";
 
 export default function HeroSection() {
@@ -14,6 +15,7 @@ export default function HeroSection() {
   const [eventDate, setEventDate] = useState("");
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const [, setLocation] = useLocation();
 
   const createEventMutation = useMutation({
     mutationFn: async (data: { name: string; date: string }) => {
@@ -23,10 +25,12 @@ export default function HeroSection() {
     onSuccess: (event) => {
       toast({
         title: "Event Created Successfully!",
-        description: `Your event "${event.name}" is ready. Share the link with your guests.`,
+        description: `Your event "${event.name}" is ready. Redirecting to your event page.`,
       });
-      // Here you would typically navigate to the event page or show the QR code
-      console.log("Event created:", event);
+      // Navigate to the event page
+      setTimeout(() => {
+        setLocation(`/event/${event.id}`);
+      }, 1500);
     },
     onError: () => {
       toast({
