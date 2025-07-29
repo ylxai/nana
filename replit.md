@@ -2,7 +2,7 @@
 
 ## Overview
 
-Wedibox is a modern photo-sharing website focused on celebrations, particularly weddings. The application allows users to create events quickly, generate shareable links and QR codes, and enable guests to upload photos without requiring accounts. The system is built with a full-stack TypeScript architecture using React for the frontend and Express.js for the backend.
+Wedibox is a modern photo-sharing website focused on celebrations, particularly weddings. The application allows users to create events quickly, generate shareable links and QR codes, and enable guests to upload photos without requiring accounts. Features include instant event creation, guest photo uploads, digital guestbook functionality, multi-album support, wedding slideshow capabilities, and comprehensive admin management. The system is built with a full-stack TypeScript architecture using React for the frontend, Express.js for the backend, and PostgreSQL for persistent data storage.
 
 ## User Preferences
 
@@ -100,5 +100,13 @@ The application is configured for deployment on Replit with the following setup:
   - Implemented DatabaseStorage class using Drizzle ORM
   - Pushed database schema with events, photos, and messages tables
   - All data now persists between application restarts
+
+- **July 29, 2025**: Completed comprehensive admin dashboard
+  - Added secure admin authentication (username: admin, password: klp123)
+  - Implemented real-time statistics dashboard with live database data
+  - Created complete event management with view, delete, and export capabilities
+  - Added admin API endpoints for system management and analytics
+  - Integrated admin access button in main application header
+  - Full CRUD operations for events with automatic cascade deletion
 
 The application is designed to be easily deployable with minimal configuration while maintaining separation of concerns between frontend and backend code.
