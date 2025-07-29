@@ -302,9 +302,11 @@ export default function AdminDashboard() {
 
         {/* Admin Tabs */}
         <Tabs defaultValue="events" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="events">Events</TabsTrigger>
             <TabsTrigger value="photos">Photos</TabsTrigger>
+            <TabsTrigger value="gallery">Gallery</TabsTrigger>
+            <TabsTrigger value="pricing">Pricing</TabsTrigger>
             <TabsTrigger value="messages">Messages</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
@@ -554,6 +556,181 @@ export default function AdminDashboard() {
                       <span>System Uptime</span>
                       <span className="font-semibold text-green-600">99.9%</span>
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="gallery" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Gallery Management</h2>
+              <Button className="bg-rose-gold text-white hover:bg-deep-rose">
+                <Camera className="h-4 w-4 mr-2" />
+                Add to Gallery
+              </Button>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Portfolio Gallery</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-center w-full">
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-rose-gold border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <Camera className="w-8 h-8 mb-3 text-rose-gold" />
+                        <p className="mb-2 text-sm text-gray-500">
+                          <span className="font-semibold">Upload Portfolio Photos</span>
+                        </p>
+                        <p className="text-xs text-gray-500">High quality wedding photos for gallery</p>
+                      </div>
+                      <input type="file" multiple accept="image/*" className="hidden" />
+                    </label>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">Category</label>
+                    <select className="w-full p-2 border border-gray-300 rounded-md">
+                      <option value="weddings">Weddings</option>
+                      <option value="engagement">Engagement</option>
+                      <option value="prewedding">Pre-wedding</option>
+                      <option value="family">Family</option>
+                    </select>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Gallery Categories</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="font-medium">Wedding Portfolio</span>
+                      <Badge>45 Photos</Badge>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="font-medium">Engagement Sessions</span>
+                      <Badge>23 Photos</Badge>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="font-medium">Pre-wedding</span>
+                      <Badge>38 Photos</Badge>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="font-medium">Family Portraits</span>
+                      <Badge>12 Photos</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="pricing" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Pricing Management</h2>
+              <Button className="bg-rose-gold text-white hover:bg-deep-rose">
+                <Settings className="h-4 w-4 mr-2" />
+                Update Pricing
+              </Button>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Wedding Packages</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="p-4 border border-gray-200 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-semibold">Basic Package</h4>
+                      <Badge variant="outline">Popular</Badge>
+                    </div>
+                    <div className="space-y-2">
+                      <Input placeholder="Price (Rp)" defaultValue="5000000" />
+                      <textarea 
+                        className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                        rows={3}
+                        placeholder="Package description..."
+                        defaultValue="4 jam liputan, 100 foto edit, USB flashdisk, online gallery"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-4 border border-gray-200 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-semibold">Premium Package</h4>
+                      <Badge className="bg-rose-gold text-white">Recommended</Badge>
+                    </div>
+                    <div className="space-y-2">
+                      <Input placeholder="Price (Rp)" defaultValue="8000000" />
+                      <textarea 
+                        className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                        rows={3}
+                        placeholder="Package description..."
+                        defaultValue="8 jam liputan, 200 foto edit, album cetak, USB flashdisk, online gallery, video highlight"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-4 border border-gray-200 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-semibold">Platinum Package</h4>
+                      <Badge variant="secondary">Luxury</Badge>
+                    </div>
+                    <div className="space-y-2">
+                      <Input placeholder="Price (Rp)" defaultValue="12000000" />
+                      <textarea 
+                        className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                        rows={3}
+                        placeholder="Package description..."
+                        defaultValue="Full day coverage, unlimited foto edit, premium album, USB + online gallery, cinematic video, same day edit"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Additional Services</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="font-medium">Pre-wedding Session</span>
+                      <Input className="w-32" placeholder="Price" defaultValue="2500000" />
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="font-medium">Engagement Session</span>
+                      <Input className="w-32" placeholder="Price" defaultValue="1500000" />
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="font-medium">Extra Hour Coverage</span>
+                      <Input className="w-32" placeholder="Price" defaultValue="500000" />
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="font-medium">Album Upgrade</span>
+                      <Input className="w-32" placeholder="Price" defaultValue="800000" />
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="font-medium">Video Highlight</span>
+                      <Input className="w-32" placeholder="Price" defaultValue="1200000" />
+                    </div>
+                  </div>
+
+                  <div className="mt-6 p-4 bg-rose-gold/10 rounded-lg">
+                    <h5 className="font-semibold text-rose-gold mb-2">Pricing Notes</h5>
+                    <textarea 
+                      className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                      rows={4}
+                      placeholder="Additional notes about pricing..."
+                      defaultValue="- Harga belum termasuk transport luar kota&#10;- DP 30% untuk booking&#10;- Pelunasan H-7 sebelum acara&#10;- Reschedule maksimal 2x"
+                    />
                   </div>
                 </CardContent>
               </Card>

@@ -1,141 +1,158 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Wand2, QrCode, Users, Upload, BarChart3, Camera } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+import { Camera, Heart, Award, Users } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLocation } from "wouter";
-import type { Event } from "@shared/schema";
 
 export default function HeroSection() {
-  const [eventName, setEventName] = useState("");
-  const [eventDate, setEventDate] = useState("");
-  const { toast } = useToast();
-  const isMobile = useIsMobile();
   const [, setLocation] = useLocation();
-
-  const createEventMutation = useMutation({
-    mutationFn: async (data: { name: string; date: string }) => {
-      const response = await apiRequest("POST", "/api/events", data);
-      return response.json() as Promise<Event>;
-    },
-    onSuccess: (event) => {
-      toast({
-        title: "Event Created Successfully!",
-        description: `Your event "${event.name}" is ready. Redirecting to your event page.`,
-      });
-      // Navigate to the event page
-      setTimeout(() => {
-        setLocation(`/event/${event.id}`);
-      }, 1500);
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to create event. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleCreateEvent = () => {
-    if (!eventName.trim() || !eventDate) {
-      toast({
-        title: "Missing Information",
-        description: "Please enter both event name and date.",
-        variant: "destructive",
-      });
-      return;
+  const isMobile = useIsMobile();
+  
+  // Typing animation state
+  const [typedText, setTypedText] = useState("");
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentPhrase, setCurrentPhrase] = useState(0);
+  
+  const phrases = ["Wedding Photography", "Abadikan Momen Anda"];
+  
+  useEffect(() => {
+    const currentPhraseText = phrases[currentPhrase];
+    
+    if (currentIndex < currentPhraseText.length) {
+      const timeout = setTimeout(() => {
+        setTypedText(currentPhraseText.slice(0, currentIndex + 1));
+        setCurrentIndex(currentIndex + 1);
+      }, 100);
+      return () => clearTimeout(timeout);
+    } else {
+      // Pause at end of phrase
+      const timeout = setTimeout(() => {
+        if (currentPhrase < phrases.length - 1) {
+          setCurrentPhrase(currentPhrase + 1);
+          setCurrentIndex(0);
+          setTypedText("");
+        } else {
+          // Reset to first phrase
+          setCurrentPhrase(0);
+          setCurrentIndex(0);
+          setTypedText("");
+        }
+      }, 2000);
+      return () => clearTimeout(timeout);
     }
-
-    createEventMutation.mutate({
-      name: eventName.trim(),
-      date: eventDate,
-    });
-  };
+  }, [currentIndex, currentPhrase]);
 
   return (
-    <section className="hero-gradient pt-24 pb-16 min-h-screen flex items-center">
-      <div className="container mx-auto px-4">
+    <section className="hero-gradient pt-20 pb-16 min-h-screen flex items-center relative overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-gradient-to-br from-rose-gold/10 via-transparent to-deep-rose/10"></div>
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="20" height="20" xmlns="http://www.w3.org/2000/svg"%3E%3Cdefs%3E%3Cpattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"%3E%3Cpath d="M 20 0 L 0 0 0 20" fill="none" stroke="%23d4af37" stroke-width="0.5" opacity="0.1"/%3E%3C/pattern%3E%3C/defs%3E%3Crect width="100%25" height="100%25" fill="url(%23grid)" /%3E%3C/svg%3E')] opacity-30"></div>
+      
+      <div className="container mx-auto px-4 relative z-10">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="text-center lg:text-left">
-            <h1 className="text-5xl lg:text-6xl font-bold text-gray-800 mb-6 leading-tight">
-              Your photos.<br />
-              Your guests.<br />
-              <span className="text-rose-gold">One perfect album.</span>
-            </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-lg">
-              No apps. No fuss. Just memories. Create your celebration album in seconds and let guests upload their favorite moments.
-            </p>
+            {/* 3D Typing Text */}
+            <div className="mb-8">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-800 mb-4 leading-tight">
+                <span className="block text-3xl md:text-4xl lg:text-5xl text-rose-gold mb-2">Hafiportrait</span>
+                <span className="typing-3d-text relative inline-block">
+                  {typedText}
+                  <span className="typing-cursor absolute top-0 right-0 animate-pulse">|</span>
+                </span>
+              </h1>
+              <p className="text-lg md:text-xl text-gray-600 max-w-lg mx-auto lg:mx-0">
+                Profesional wedding photographer yang mengabadikan setiap momen berharga dalam hidup Anda dengan sentuhan artistik dan kualitas terbaik.
+              </p>
+            </div>
 
-            {/* Admin Notice */}
-            <Card className="p-8 mb-8 max-w-md mx-auto lg:mx-0 shadow-xl">
-              <CardContent className="p-0 text-center">
-                <h3 className="text-2xl font-semibold mb-4">Buat Acara Baru</h3>
-                <p className="text-gray-600 mb-4">
-                  Hanya admin yang dapat membuat acara baru. Silakan masuk ke dashboard admin untuk membuat acara.
-                </p>
-                <Button 
-                  onClick={() => setLocation('/admin')}
-                  className="w-full bg-rose-gold text-white hover:bg-deep-rose"
-                >
-                  <Wand2 className="mr-2 h-4 w-4" />
-                  Masuk Admin
-                </Button>
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                  <QrCode className="h-8 w-8 text-rose-gold mx-auto mb-2" />
-                  <p className="text-sm text-gray-600">QR code dan link akan dibuat otomatis</p>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Service Highlights */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+              <div className="text-center p-4 bg-white/50 backdrop-blur-sm rounded-lg">
+                <Camera className="h-8 w-8 text-rose-gold mx-auto mb-2" />
+                <p className="text-sm font-semibold text-gray-700">Professional</p>
+              </div>
+              <div className="text-center p-4 bg-white/50 backdrop-blur-sm rounded-lg">
+                <Heart className="h-8 w-8 text-rose-gold mx-auto mb-2" />
+                <p className="text-sm font-semibold text-gray-700">Romantic</p>
+              </div>
+              <div className="text-center p-4 bg-white/50 backdrop-blur-sm rounded-lg col-span-2 md:col-span-1">
+                <Award className="h-8 w-8 text-rose-gold mx-auto mb-2" />
+                <p className="text-sm font-semibold text-gray-700">Award Winner</p>
+              </div>
+            </div>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+              <Button 
+                size="lg"
+                className="bg-rose-gold text-white hover:bg-deep-rose px-8 py-3 text-lg font-semibold shadow-lg"
+                onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                <Camera className="mr-2 h-5 w-5" />
+                Hubungi Kami
+              </Button>
+              <Button 
+                size="lg"
+                variant="outline"
+                className="border-rose-gold text-rose-gold hover:bg-rose-gold hover:text-white px-8 py-3 text-lg font-semibold"
+                onClick={() => document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                Lihat Portfolio
+              </Button>
+            </div>
           </div>
 
           <div className="relative">
-            {/* Mobile mockup showing the app */}
-            <div className="relative max-w-sm mx-auto">
-              <img
-                src="https://images.unsplash.com/photo-1519741497674-611481863552?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=1200"
-                alt="Wedding celebration with guests"
-                className="rounded-3xl shadow-2xl"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent rounded-3xl"></div>
-
-              {/* Floating UI elements */}
-              <div className="absolute top-6 left-6 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-full text-sm font-semibold">
-                <Users className="inline mr-1 h-4 w-4 text-rose-gold" />
-                24 guests uploading
+            {/* Hero Image */}
+            <div className="relative max-w-lg mx-auto">
+              <div className="aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl">
+                <img
+                  src="https://images.unsplash.com/photo-1606216794074-735e91aa2c92?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=1000"
+                  alt="Hafiportrait Wedding Photography"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
               </div>
 
-              <div className="absolute bottom-6 left-6 right-6 bg-white/90 backdrop-blur-sm p-4 rounded-2xl">
-                <div className="flex items-center space-x-3">
-                  <Upload className="text-rose-gold h-5 w-5" />
-                  <div className="flex-1">
-                    <div className="bg-gray-200 rounded-full h-2">
-                      <div className="bg-rose-gold h-2 rounded-full w-3/4"></div>
-                    </div>
-                    <p className="text-xs text-gray-600 mt-1">Uploading 12 of 16 photos...</p>
+              {/* Floating Stats */}
+              <div className="absolute -top-4 -left-4 bg-white/90 backdrop-blur-sm px-4 py-3 rounded-2xl shadow-lg">
+                <div className="flex items-center space-x-2">
+                  <Users className="h-5 w-5 text-rose-gold" />
+                  <div>
+                    <p className="text-sm font-bold text-gray-800">500+</p>
+                    <p className="text-xs text-gray-600">Happy Couples</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="absolute -bottom-4 -right-4 bg-white/90 backdrop-blur-sm px-4 py-3 rounded-2xl shadow-lg">
+                <div className="flex items-center space-x-2">
+                  <Award className="h-5 w-5 text-rose-gold" />
+                  <div>
+                    <p className="text-sm font-bold text-gray-800">5 Years</p>
+                    <p className="text-xs text-gray-600">Experience</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-
-        {/* Floating action button for mobile */}
-        {isMobile && (
-          <div className="fixed bottom-6 right-6 z-40">
-            <Button
-              size="lg"
-              className="bg-rose-gold text-white w-14 h-14 rounded-full shadow-lg float hover:bg-deep-rose"
-            >
-              <Camera className="h-6 w-6" />
-            </Button>
-          </div>
-        )}
       </div>
+
+      {/* Floating action button for mobile */}
+      {isMobile && (
+        <div className="fixed bottom-6 right-6 z-40">
+          <Button
+            size="lg"
+            className="bg-rose-gold text-white w-14 h-14 rounded-full shadow-lg hover:bg-deep-rose transform hover:scale-110 transition-all"
+            onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+          >
+            <Camera className="h-6 w-6" />
+          </Button>
+        </div>
+      )}
     </section>
   );
 }
