@@ -1,160 +1,182 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Camera, Heart, Award, Users } from "lucide-react";
+import { Camera, Heart, Sparkles, ArrowRight, Play } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLocation } from "wouter";
+
+const typingTexts = [
+  "Wedding Photography",
+  "Abadikan Momen Anda"
+];
 
 export default function HeroSection() {
   const [, setLocation] = useLocation();
   const isMobile = useIsMobile();
-  
-  // Typing animation state
-  const [typedText, setTypedText] = useState("");
+  const [currentText, setCurrentText] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [currentPhrase, setCurrentPhrase] = useState(0);
-  
-  const phrases = ["Wedding Photography", "Abadikan Momen Anda"];
-  
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showCursor, setShowCursor] = useState(true);
+
   useEffect(() => {
-    const currentPhraseText = phrases[currentPhrase];
-    
-    if (currentIndex < currentPhraseText.length) {
-      const timeout = setTimeout(() => {
-        setTypedText(currentPhraseText.slice(0, currentIndex + 1));
-        setCurrentIndex(currentIndex + 1);
-      }, 100);
-      return () => clearTimeout(timeout);
-    } else {
-      // Pause at end of phrase
-      const timeout = setTimeout(() => {
-        if (currentPhrase < phrases.length - 1) {
-          setCurrentPhrase(currentPhrase + 1);
-          setCurrentIndex(0);
-          setTypedText("");
-        } else {
-          // Reset to first phrase
-          setCurrentPhrase(0);
-          setCurrentIndex(0);
-          setTypedText("");
-        }
-      }, 2000);
-      return () => clearTimeout(timeout);
-    }
-  }, [currentIndex, currentPhrase]);
+    const timeout = setTimeout(() => {
+      const fullText = typingTexts[currentIndex];
+
+      if (isDeleting) {
+        setCurrentText(fullText.substring(0, currentText.length - 1));
+      } else {
+        setCurrentText(fullText.substring(0, currentText.length + 1));
+      }
+
+      if (!isDeleting && currentText === fullText) {
+        setTimeout(() => setIsDeleting(true), 2000);
+      } else if (isDeleting && currentText === "") {
+        setIsDeleting(false);
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % typingTexts.length);
+      }
+    }, isDeleting ? 50 : 100);
+
+    return () => clearTimeout(timeout);
+  }, [currentText, currentIndex, isDeleting]);
+
+  useEffect(() => {
+    const cursorInterval = setInterval(() => {
+      setShowCursor(prev => !prev);
+    }, 500);
+
+    return () => clearInterval(cursorInterval);
+  }, []);
 
   return (
-    <section className="hero-gradient pt-20 pb-16 min-h-screen flex items-center relative overflow-hidden">
+    <section className="relative min-h-screen bg-gradient-to-br from-wedding-ivory via-white to-rose-gold/10 flex items-center justify-center overflow-hidden">
       {/* Background Pattern */}
-      <div className="absolute inset-0 bg-gradient-to-br from-rose-gold/10 via-transparent to-deep-rose/10"></div>
-      <div className="absolute inset-0 opacity-30">
-        <div className="w-full h-full bg-grid-pattern"></div>
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23D4A574" fill-opacity="0.4"%3E%3Ccircle cx="30" cy="30" r="4"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] bg-repeat"></div>
       </div>
-      
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div className="text-center lg:text-left">
-            {/* 3D Typing Text */}
-            <div className="mb-8">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-800 mb-4 leading-tight">
-                <span className="block text-3xl md:text-4xl lg:text-5xl text-rose-gold mb-2">Hafiportrait</span>
-                <span className="typing-3d-text relative inline-block">
-                  {typedText}
-                  <span className="typing-cursor absolute top-0 right-0 animate-pulse">|</span>
-                </span>
-              </h1>
-              <p className="text-lg md:text-xl text-gray-600 max-w-lg mx-auto lg:mx-0">
-                Profesional wedding photographer yang mengabadikan setiap momen berharga dalam hidup Anda dengan sentuhan artistik dan kualitas terbaik.
-              </p>
+
+      {/* Floating Elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-20 left-4 md:left-10 text-rose-gold/20 animate-bounce">
+          <Heart className="h-6 w-6 md:h-8 md:w-8" />
+        </div>
+        <div className="absolute top-32 right-4 md:right-16 text-rose-gold/20 animate-pulse">
+          <Camera className="h-5 w-5 md:h-6 md:w-6" />
+        </div>
+        <div className="absolute bottom-32 left-4 md:left-20 text-rose-gold/20 animate-bounce delay-300">
+          <Sparkles className="h-6 w-6 md:h-7 md:w-7" />
+        </div>
+        <div className="absolute top-1/2 right-2 md:right-8 text-rose-gold/20 animate-pulse delay-700">
+          <Heart className="h-4 w-4 md:h-5 md:w-5" />
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-12 md:py-20 relative z-10">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+            {/* Left Content */}
+            <div className="text-center lg:text-left space-y-6 md:space-y-8">
+              <div className="space-y-4 md:space-y-6">
+                <div className="inline-flex items-center space-x-2 bg-rose-gold/10 px-3 py-1.5 md:px-4 md:py-2 rounded-full">
+                  <Camera className="h-4 w-4 md:h-5 md:w-5 text-rose-gold" />
+                  <span className="text-rose-gold font-medium text-xs md:text-sm">HAFIPORTRAIT</span>
+                </div>
+
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold text-gray-800 leading-tight">
+                  <span className="block text-transparent bg-clip-text bg-gradient-to-r from-rose-gold to-deep-rose min-h-[1.2em]">
+                    {currentText}
+                    <span className={`${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity duration-100`}>|</span>
+                  </span>
+                </h1>
+
+                <p className="text-base md:text-xl text-gray-600 max-w-2xl mx-auto lg:mx-0 leading-relaxed px-4 lg:px-0">
+                  Mengabadikan setiap momen berharga pernikahan Anda dengan sentuhan artistik dan profesional. 
+                  Ciptakan kenangan indah yang akan dikenang selamanya.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center lg:justify-start px-4 lg:px-0">
+                <Button 
+                  size="lg" 
+                  className="bg-gradient-to-r from-rose-gold to-deep-rose text-white hover:shadow-2xl hover:scale-105 transition-all duration-300 px-6 md:px-8 py-3 md:py-4 text-base md:text-lg"
+                >
+                  <Heart className="h-4 w-4 md:h-5 md:w-5 mr-2" />
+                  Lihat Portfolio
+                  <ArrowRight className="h-4 w-4 md:h-5 md:w-5 ml-2" />
+                </Button>
+
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="border-2 border-rose-gold text-rose-gold hover:bg-rose-gold hover:text-white transition-all duration-300 px-6 md:px-8 py-3 md:py-4 text-base md:text-lg"
+                >
+                  <Camera className="h-4 w-4 md:h-5 md:w-5 mr-2" />
+                  Konsultasi Gratis
+                </Button>
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-4 md:gap-8 pt-6 md:pt-8 border-t border-gray-200 mx-4 lg:mx-0">
+                <div className="text-center">
+                  <div className="text-2xl md:text-3xl font-bold text-rose-gold">100+</div>
+                  <div className="text-xs md:text-sm text-gray-600">Happy Couples</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl md:text-3xl font-bold text-rose-gold">500+</div>
+                  <div className="text-xs md:text-sm text-gray-600">Events</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl md:text-3xl font-bold text-rose-gold">5+</div>
+                  <div className="text-xs md:text-sm text-gray-600">Years Experience</div>
+                </div>
+              </div>
             </div>
 
-            {/* Service Highlights */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-              <div className="text-center p-4 bg-white/50 backdrop-blur-sm rounded-lg">
-                <Camera className="h-8 w-8 text-rose-gold mx-auto mb-2" />
-                <p className="text-sm font-semibold text-gray-700">Professional</p>
-              </div>
-              <div className="text-center p-4 bg-white/50 backdrop-blur-sm rounded-lg">
-                <Heart className="h-8 w-8 text-rose-gold mx-auto mb-2" />
-                <p className="text-sm font-semibold text-gray-700">Romantic</p>
-              </div>
-              <div className="text-center p-4 bg-white/50 backdrop-blur-sm rounded-lg col-span-2 md:col-span-1">
-                <Award className="h-8 w-8 text-rose-gold mx-auto mb-2" />
-                <p className="text-sm font-semibold text-gray-700">Award Winner</p>
-              </div>
-            </div>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Button 
-                size="lg"
-                className="bg-rose-gold text-white hover:bg-deep-rose px-8 py-3 text-lg font-semibold shadow-lg"
-                onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-              >
-                <Camera className="mr-2 h-5 w-5" />
-                Hubungi Kami
-              </Button>
-              <Button 
-                size="lg"
-                variant="outline"
-                className="border-rose-gold text-rose-gold hover:bg-rose-gold hover:text-white px-8 py-3 text-lg font-semibold"
-                onClick={() => document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' })}
-              >
-                Lihat Portfolio
-              </Button>
-            </div>
-          </div>
-
-          <div className="relative">
-            {/* Hero Image */}
-            <div className="relative max-w-lg mx-auto">
-              <div className="aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl">
-                <img
-                  src="https://images.unsplash.com/photo-1606216794074-735e91aa2c92?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=1000"
-                  alt="Hafiportrait Wedding Photography"
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+            {/* Right Content - Hero Image */}
+            <div className="relative mt-8 lg:mt-0 px-4 lg:px-0">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-rose-gold/20 to-deep-rose/20 rounded-2xl md:rounded-3xl transform rotate-3 md:rotate-6"></div>
+                <Card className="relative bg-white/90 backdrop-blur-sm border-0 shadow-2xl rounded-2xl md:rounded-3xl overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="aspect-[4/5] bg-gradient-to-br from-rose-gold/10 to-deep-rose/10 flex items-center justify-center">
+                      <div className="text-center space-y-3 md:space-y-4 p-4">
+                        <div className="w-16 h-16 md:w-24 md:h-24 bg-rose-gold/20 rounded-full flex items-center justify-center mx-auto">
+                          <Camera className="h-8 w-8 md:h-12 md:w-12 text-rose-gold" />
+                        </div>
+                        <div className="space-y-2">
+                          <h3 className="text-xl md:text-2xl font-bold text-gray-800">Portfolio Preview</h3>
+                          <p className="text-sm md:text-base text-gray-600">Lihat hasil karya terbaik kami</p>
+                          <Button 
+                            variant="outline" 
+                            className="border-rose-gold text-rose-gold hover:bg-rose-gold hover:text-white text-sm md:text-base"
+                          >
+                            <Play className="h-3 w-3 md:h-4 md:w-4 mr-2" />
+                            Play Demo
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
 
-              {/* Floating Stats */}
-              <div className="absolute -top-4 -left-4 bg-white/90 backdrop-blur-sm px-4 py-3 rounded-2xl shadow-lg">
-                <div className="flex items-center space-x-2">
-                  <Users className="h-5 w-5 text-rose-gold" />
-                  <div>
-                    <p className="text-sm font-bold text-gray-800">500+</p>
-                    <p className="text-xs text-gray-600">Happy Couples</p>
-                  </div>
+              {/* Floating Cards */}
+              <div className="absolute -top-3 -right-3 md:-top-6 md:-right-6 bg-white rounded-xl md:rounded-2xl shadow-xl p-2 md:p-4 animate-bounce">
+                <div className="flex items-center space-x-1 md:space-x-2">
+                  <Heart className="h-4 w-4 md:h-5 md:w-5 text-red-500" />
+                  <span className="text-xs md:text-sm font-medium">Premium Quality</span>
                 </div>
               </div>
 
-              <div className="absolute -bottom-4 -right-4 bg-white/90 backdrop-blur-sm px-4 py-3 rounded-2xl shadow-lg">
-                <div className="flex items-center space-x-2">
-                  <Award className="h-5 w-5 text-rose-gold" />
-                  <div>
-                    <p className="text-sm font-bold text-gray-800">5 Years</p>
-                    <p className="text-xs text-gray-600">Experience</p>
-                  </div>
+              <div className="absolute -bottom-3 -left-3 md:-bottom-6 md:-left-6 bg-white rounded-xl md:rounded-2xl shadow-xl p-2 md:p-4 animate-pulse">
+                <div className="flex items-center space-x-1 md:space-x-2">
+                  <Sparkles className="h-4 w-4 md:h-5 md:w-5 text-yellow-500" />
+                  <span className="text-xs md:text-sm font-medium">Fast Delivery</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Floating action button for mobile */}
-      {isMobile && (
-        <div className="fixed bottom-6 right-6 z-40">
-          <Button
-            size="lg"
-            className="bg-rose-gold text-white w-14 h-14 rounded-full shadow-lg hover:bg-deep-rose transform hover:scale-110 transition-all"
-            onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-          >
-            <Camera className="h-6 w-6" />
-          </Button>
-        </div>
-      )}
     </section>
   );
 }

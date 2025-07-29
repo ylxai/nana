@@ -368,6 +368,23 @@ export class DatabaseStorage implements IStorage {
     // Store PDF file
     return { success: true, pdfData };
   }
+
+  async getAdminStats() {
+    const totalEvents = await this.getAllEvents().then(events => events.length);
+    const totalPhotos = await this.getTotalPhotosCount();
+    const totalMessages = await this.getTotalMessagesCount();
+    const activeEvents = await this.getAllEvents().then(events => 
+      events.filter(event => new Date(event.date) >= new Date()).length
+    );
+
+    return {
+      totalEvents,
+      totalPhotos,
+      totalMessages,
+      activeEvents,
+      storageUsed: "2.4 GB"
+    };
+  }
 }
 
 export const storage = new DatabaseStorage();

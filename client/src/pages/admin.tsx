@@ -756,81 +756,208 @@ export default function AdminDashboard() {
           <TabsContent value="pricing" className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold">Pricing Management</h2>
-              <Button 
-                className="bg-rose-gold text-white hover:bg-deep-rose"
-                onClick={savePricing}
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Save Pricing
-              </Button>
+              <div className="flex space-x-2">
+                <Button 
+                  variant="outline"
+                  onClick={() => document.querySelector<HTMLInputElement>('#add-package')?.click()}
+                >
+                  <Camera className="h-4 w-4 mr-2" />
+                  Tambah Paket
+                </Button>
+                <Button 
+                  className="bg-rose-gold text-white hover:bg-deep-rose"
+                  onClick={savePricing}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Save All Changes
+                </Button>
+              </div>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid lg:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Wedding Packages</CardTitle>
+                  <CardTitle className="flex items-center">
+                    <Camera className="h-5 w-5 mr-2 text-rose-gold" />
+                    Wedding Packages
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="p-4 border border-gray-200 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold">Basic Package</h4>
-                      <Badge variant="outline">Popular</Badge>
+                <CardContent className="space-y-6">
+                  {/* Paket Akad Nikah */}
+                  <div className="p-6 border-2 border-gray-200 rounded-lg hover:border-rose-gold transition-colors">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-bold text-lg">Paket Akad Nikah</h4>
+                      <div className="flex items-center space-x-2">
+                        <Badge className="bg-blue-500 text-white">PROMO</Badge>
+                        <Button variant="ghost" size="sm">
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Input 
-                        placeholder="Price (Rp)" 
-                        value={pricing.basic?.price || "5000000"}
-                        onChange={(e) => setPricing({...pricing, basic: {...pricing.basic, price: e.target.value}})}
-                      />
-                      <textarea 
-                        className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                        rows={3}
-                        placeholder="Package description..."
-                        value={pricing.basic?.description || "4 jam liputan, 100 foto edit, USB flashdisk, online gallery"}
-                        onChange={(e) => setPricing({...pricing, basic: {...pricing.basic, description: e.target.value}})}
-                      />
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Nama Paket</label>
+                        <Input 
+                          placeholder="Paket Akad Nikah" 
+                          value="Paket Akad Nikah"
+                          onChange={(e) => setPricing({...pricing, akad: {...pricing.akad, name: e.target.value}})}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Harga (IDR)</label>
+                        <Input 
+                          placeholder="1300000" 
+                          value={pricing.akad?.price || "1300000"}
+                          onChange={(e) => setPricing({...pricing, akad: {...pricing.akad, price: e.target.value}})}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Badge</label>
+                        <select 
+                          className="w-full p-2 border border-gray-300 rounded-md"
+                          value={pricing.akad?.badge || "PROMO"}
+                          onChange={(e) => setPricing({...pricing, akad: {...pricing.akad, badge: e.target.value}})}
+                        >
+                          <option value="PROMO">PROMO</option>
+                          <option value="POPULAR">POPULAR</option>
+                          <option value="RECOMMENDED">RECOMMENDED</option>
+                          <option value="LUXURY">LUXURY</option>
+                          <option value="NEW">NEW</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Icon</label>
+                        <Input 
+                          placeholder="👰‍♀️💒 (emoji icon)" 
+                          value={pricing.akad?.icon || "👰‍♀️💒"}
+                          onChange={(e) => setPricing({...pricing, akad: {...pricing.akad, icon: e.target.value}})}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Fitur (satu per baris)</label>
+                        <textarea 
+                          className="w-full p-3 border border-gray-300 rounded-md text-sm"
+                          rows={6}
+                          placeholder="1 fotografer&#10;1 hari kerja&#10;40 cetak foto 5R&#10;Album magnetik&#10;File foto tanpa batas"
+                          value={pricing.akad?.features || "1 fotografer\n1 hari kerja\n40 cetak foto 5R (pilihan)\nAlbum magnetik (tempel)\nFile foto tanpa batas\nSoftcopy di flashdisk"}
+                          onChange={(e) => setPricing({...pricing, akad: {...pricing.akad, features: e.target.value}})}
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="p-4 border border-gray-200 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold">Premium Package</h4>
-                      <Badge className="bg-rose-gold text-white">Recommended</Badge>
+                  {/* Paket Premium */}
+                  <div className="p-6 border-2 border-rose-gold rounded-lg bg-rose-gold/5">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-bold text-lg">Paket Premium</h4>
+                      <div className="flex items-center space-x-2">
+                        <Badge className="bg-rose-gold text-white">RECOMMENDED</Badge>
+                        <Button variant="ghost" size="sm">
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Input 
-                        placeholder="Price (Rp)" 
-                        value={pricing.premium?.price || "8000000"}
-                        onChange={(e) => setPricing({...pricing, premium: {...pricing.premium, price: e.target.value}})}
-                      />
-                      <textarea 
-                        className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                        rows={3}
-                        placeholder="Package description..."
-                        value={pricing.premium?.description || "8 jam liputan, 200 foto edit, album cetak, USB flashdisk, online gallery, video highlight"}
-                        onChange={(e) => setPricing({...pricing, premium: {...pricing.premium, description: e.target.value}})}
-                      />
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Nama Paket</label>
+                        <Input 
+                          placeholder="Paket Premium" 
+                          value="Paket Premium"
+                          onChange={(e) => setPricing({...pricing, premium: {...pricing.premium, name: e.target.value}})}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Harga (IDR)</label>
+                        <Input 
+                          placeholder="8000000" 
+                          value={pricing.premium?.price || "8000000"}
+                          onChange={(e) => setPricing({...pricing, premium: {...pricing.premium, price: e.target.value}})}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Badge</label>
+                        <select className="w-full p-2 border border-gray-300 rounded-md">
+                          <option value="RECOMMENDED" selected>RECOMMENDED</option>
+                          <option value="POPULAR">POPULAR</option>
+                          <option value="PROMO">PROMO</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Icon</label>
+                        <Input placeholder="💍✨ (emoji icon)" value="💍✨" />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Fitur (satu per baris)</label>
+                        <textarea 
+                          className="w-full p-3 border border-gray-300 rounded-md text-sm"
+                          rows={6}
+                          value={pricing.premium?.features || "2 fotografer\n8 jam liputan\n200 foto edit profesional\nAlbum premium 40 halaman\nUSB flashdisk custom\nOnline gallery selamanya\nVideo highlight 3-5 menit"}
+                          onChange={(e) => setPricing({...pricing, premium: {...pricing.premium, features: e.target.value}})}
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="p-4 border border-gray-200 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold">Platinum Package</h4>
-                      <Badge variant="secondary">Luxury</Badge>
+                  {/* Paket Platinum */}
+                  <div className="p-6 border-2 border-gray-200 rounded-lg">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-bold text-lg">Paket Platinum</h4>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant="secondary">LUXURY</Badge>
+                        <Button variant="ghost" size="sm">
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Input 
-                        placeholder="Price (Rp)" 
-                        value={pricing.platinum?.price || "12000000"}
-                        onChange={(e) => setPricing({...pricing, platinum: {...pricing.platinum, price: e.target.value}})}
-                      />
-                      <textarea 
-                        className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                        rows={3}
-                        placeholder="Package description..."
-                        value={pricing.platinum?.description || "Full day coverage, unlimited foto edit, premium album, USB + online gallery, cinematic video, same day edit"}
-                        onChange={(e) => setPricing({...pricing, platinum: {...pricing.platinum, description: e.target.value}})}
-                      />
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Nama Paket</label>
+                        <Input placeholder="Paket Platinum" value="Paket Platinum" />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Harga (IDR)</label>
+                        <Input 
+                          placeholder="12000000" 
+                          value={pricing.platinum?.price || "12000000"}
+                          onChange={(e) => setPricing({...pricing, platinum: {...pricing.platinum, price: e.target.value}})}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Badge</label>
+                        <select className="w-full p-2 border border-gray-300 rounded-md">
+                          <option value="LUXURY" selected>LUXURY</option>
+                          <option value="PREMIUM">PREMIUM</option>
+                          <option value="EXCLUSIVE">EXCLUSIVE</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Icon</label>
+                        <Input placeholder="👑💎 (emoji icon)" value="👑💎" />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Fitur (satu per baris)</label>
+                        <textarea 
+                          className="w-full p-3 border border-gray-300 rounded-md text-sm"
+                          rows={6}
+                          value={pricing.platinum?.features || "3 fotografer + videographer\nFull day coverage\nUnlimited foto edit\nAlbum premium leather\nCinematic wedding video\nDrone footage\nPre-wedding session\nSame day edit + highlight"}
+                          onChange={(e) => setPricing({...pricing, platinum: {...pricing.platinum, features: e.target.value}})}
+                        />
+                      </div>
                     </div>
                   </div>
 
