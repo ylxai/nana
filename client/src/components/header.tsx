@@ -54,6 +54,13 @@ export default function Header() {
             <Button variant="ghost" className="text-gray-600 hover:text-rose-gold">
               Sign In
             </Button>
+            <Button 
+              variant="ghost" 
+              className="text-gray-600 hover:text-rose-gold hidden md:block"
+              onClick={() => window.location.href = '/admin'}
+            >
+              Admin
+            </Button>
             <Button className="bg-rose-gold text-white hover:bg-deep-rose">
               Start Free
             </Button>

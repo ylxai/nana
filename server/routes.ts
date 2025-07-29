@@ -121,6 +121,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin routes
+  app.get("/api/admin/stats", async (req, res) => {
+    try {
+      // Get statistics from database
+      const events = await storage.getAllEvents();
+      const totalPhotos = await storage.getTotalPhotosCount();
+      const totalMessages = await storage.getTotalMessagesCount();
+      
+      const stats = {
+        totalEvents: events.length,
+        totalPhotos,
+        totalMessages,
+        activeEvents: events.filter(e => new Date(e.date) >= new Date()).length,
+        storageUsed: "2.4 GB" // This would be calculated from actual storage
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: "Server error", error });
+    }
+  });
+
+  app.get("/api/admin/events", async (req, res) => {
+    try {
+      const events = await storage.getAllEvents();
+      res.json(events);
+    } catch (error) {
+      res.status(500).json({ message: "Server error", error });
+    }
+  });
+
+  app.delete("/api/admin/events/:id", async (req, res) => {
+    try {
+      await storage.deleteEvent(req.params.id);
+      res.json({ message: "Event deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Server error", error });
+    }
+  });
+
   // Serve uploaded files
   app.use('/uploads', express.static('uploads'));
 

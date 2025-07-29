@@ -1,6 +1,6 @@
 import { events, photos, messages, type Event, type InsertEvent, type Photo, type InsertPhoto, type Message, type InsertMessage } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -8,16 +8,20 @@ export interface IStorage {
   createEvent(event: InsertEvent): Promise<Event>;
   getEvent(id: string): Promise<Event | undefined>;
   getEventByShareableLink(link: string): Promise<Event | undefined>;
+  getAllEvents(): Promise<Event[]>;
+  deleteEvent(id: string): Promise<void>;
   
   // Photos
   addPhoto(photo: InsertPhoto): Promise<Photo>;
   getEventPhotos(eventId: string): Promise<Photo[]>;
   getPhotosByAlbum(eventId: string, albumName: string): Promise<Photo[]>;
+  getTotalPhotosCount(): Promise<number>;
   
   // Messages
   addMessage(message: InsertMessage): Promise<Message>;
   getEventMessages(eventId: string): Promise<Message[]>;
   updateMessageHearts(messageId: string, hearts: number): Promise<Message | undefined>;
+  getTotalMessagesCount(): Promise<number>;
 }
 
 export class MemStorage implements IStorage {
@@ -111,6 +115,35 @@ export class MemStorage implements IStorage {
     }
     return undefined;
   }
+
+  // Admin methods for MemStorage
+  async getAllEvents(): Promise<Event[]> {
+    return Array.from(this.events.values())
+      .sort((a, b) => b.createdAt!.getTime() - a.createdAt!.getTime());
+  }
+
+  async deleteEvent(id: string): Promise<void> {
+    this.events.delete(id);
+    // Delete related photos and messages
+    Array.from(this.photos.entries()).forEach(([photoId, photo]) => {
+      if (photo.eventId === id) {
+        this.photos.delete(photoId);
+      }
+    });
+    Array.from(this.messages.entries()).forEach(([messageId, message]) => {
+      if (message.eventId === id) {
+        this.messages.delete(messageId);
+      }
+    });
+  }
+
+  async getTotalPhotosCount(): Promise<number> {
+    return this.photos.size;
+  }
+
+  async getTotalMessagesCount(): Promise<number> {
+    return this.messages.size;
+  }
 }
 
 // Database storage implementation
@@ -201,6 +234,28 @@ export class DatabaseStorage implements IStorage {
       .where(eq(messages.id, messageId))
       .returning();
     return message || undefined;
+  }
+
+  // Admin methods
+  async getAllEvents(): Promise<Event[]> {
+    return db.select().from(events).orderBy(desc(events.createdAt));
+  }
+
+  async deleteEvent(id: string): Promise<void> {
+    // Delete related photos and messages first
+    await db.delete(photos).where(eq(photos.eventId, id));
+    await db.delete(messages).where(eq(messages.eventId, id));
+    await db.delete(events).where(eq(events.id, id));
+  }
+
+  async getTotalPhotosCount(): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` }).from(photos);
+    return result[0]?.count || 0;
+  }
+
+  async getTotalMessagesCount(): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` }).from(messages);
+    return result[0]?.count || 0;
   }
 }
 
