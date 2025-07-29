@@ -1,4 +1,6 @@
-import { type Event, type InsertEvent, type Photo, type InsertPhoto, type Message, type InsertMessage } from "@shared/schema";
+import { events, photos, messages, type Event, type InsertEvent, type Photo, type InsertPhoto, type Message, type InsertMessage } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, desc } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -111,4 +113,95 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Database storage implementation
+export class DatabaseStorage implements IStorage {
+  async createEvent(insertEvent: InsertEvent): Promise<Event> {
+    const id = randomUUID();
+    const shareableLink = `https://wedibox.app/event/${id}`;
+    const qrCode = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(shareableLink)}`;
+    
+    const eventData = {
+      ...insertEvent,
+      id,
+      qrCode,
+      shareableLink,
+      isPremium: insertEvent.isPremium ?? false,
+    };
+
+    const [event] = await db
+      .insert(events)
+      .values(eventData)
+      .returning();
+    return event;
+  }
+
+  async getEvent(id: string): Promise<Event | undefined> {
+    const [event] = await db.select().from(events).where(eq(events.id, id));
+    return event || undefined;
+  }
+
+  async getEventByShareableLink(link: string): Promise<Event | undefined> {
+    const [event] = await db.select().from(events).where(eq(events.shareableLink, link));
+    return event || undefined;
+  }
+
+  async addPhoto(insertPhoto: InsertPhoto): Promise<Photo> {
+    const id = randomUUID();
+    const photoData = {
+      ...insertPhoto,
+      id,
+      albumName: insertPhoto.albumName ?? "Main",
+      uploaderName: insertPhoto.uploaderName ?? null,
+    };
+
+    const [photo] = await db
+      .insert(photos)
+      .values(photoData)
+      .returning();
+    return photo;
+  }
+
+  async getEventPhotos(eventId: string): Promise<Photo[]> {
+    return db.select().from(photos)
+      .where(eq(photos.eventId, eventId))
+      .orderBy(desc(photos.uploadedAt));
+  }
+
+  async getPhotosByAlbum(eventId: string, albumName: string): Promise<Photo[]> {
+    return db.select().from(photos)
+      .where(and(eq(photos.eventId, eventId), eq(photos.albumName, albumName)))
+      .orderBy(desc(photos.uploadedAt));
+  }
+
+  async addMessage(insertMessage: InsertMessage): Promise<Message> {
+    const id = randomUUID();
+    const messageData = {
+      ...insertMessage,
+      id,
+      hearts: 0,
+    };
+
+    const [message] = await db
+      .insert(messages)
+      .values(messageData)
+      .returning();
+    return message;
+  }
+
+  async getEventMessages(eventId: string): Promise<Message[]> {
+    return db.select().from(messages)
+      .where(eq(messages.eventId, eventId))
+      .orderBy(desc(messages.createdAt));
+  }
+
+  async updateMessageHearts(messageId: string, hearts: number): Promise<Message | undefined> {
+    const [message] = await db
+      .update(messages)
+      .set({ hearts })
+      .where(eq(messages.id, messageId))
+      .returning();
+    return message || undefined;
+  }
+}
+
+export const storage = new DatabaseStorage();

@@ -41,7 +41,7 @@ The system uses three main entities:
 - **Messages**: Digital guestbook functionality with heart reactions
 
 ### Storage Strategy
-Currently implements in-memory storage (MemStorage class) with interface (IStorage) designed for easy migration to persistent database storage. The storage layer abstracts CRUD operations for all entities.
+Now implements persistent PostgreSQL database storage (DatabaseStorage class) using Drizzle ORM for type-safe database operations. The storage layer abstracts CRUD operations for all entities. Migrated from in-memory storage on July 29, 2025 for data persistence and scalability.
 
 ## Data Flow
 
@@ -71,7 +71,7 @@ Currently implements in-memory storage (MemStorage class) with interface (IStora
 
 ### Third-Party Services
 - QR code generation via qrserver.com API
-- Neon Database for PostgreSQL hosting (configured but not yet implemented)
+- PostgreSQL database with Neon for reliable data persistence
 
 ## Deployment Strategy
 
@@ -92,5 +92,13 @@ The application is configured for deployment on Replit with the following setup:
 - Uploaded photos stored in `uploads/` directory
 - Database migrations in `migrations/` directory
 - Shared types and schemas in `shared/` directory
+
+## Recent Changes
+
+- **July 29, 2025**: Migrated from in-memory storage to PostgreSQL database
+  - Added database connection layer with Neon PostgreSQL
+  - Implemented DatabaseStorage class using Drizzle ORM
+  - Pushed database schema with events, photos, and messages tables
+  - All data now persists between application restarts
 
 The application is designed to be easily deployable with minimal configuration while maintaining separation of concerns between frontend and backend code.
