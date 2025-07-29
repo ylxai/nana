@@ -295,6 +295,15 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(events.id, eventId), eq(events.accessCode, accessCode)));
     return !!event;
   }
+
+  async updateMessageHearts(messageId: string, hearts: number): Promise<Message | undefined> {
+    const [message] = await db
+      .update(messages)
+      .set({ hearts })
+      .where(eq(messages.id, messageId))
+      .returning();
+    return message || undefined;
+  }
 }
 
 export const storage = new DatabaseStorage();

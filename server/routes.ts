@@ -107,7 +107,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update message hearts
+  app.patch("/api/messages/:messageId/hearts", async (req, res) => {
+    try {
+      const { hearts } = req.body;
+      const message = await storage.updateMessageHearts(req.params.messageId, hearts);
+      if (!message) {
+        return res.status(404).json({ message: "Message not found" });
+      }
+      res.json(message);
+    } catch (error) {
+      res.status(500).json({ message: "Server error", error });
+    }
+  });
 
+  // Verify event access code
+  app.post("/api/events/:eventId/verify-code", async (req, res) => {
+    try {
+      const { accessCode } = req.body;
+      const isValid = await storage.verifyEventAccessCode(req.params.eventId, accessCode);
+      res.json({ valid: isValid });
+    } catch (error) {
+      res.status(500).json({ message: "Server error", error });
+    }
+  });
+
+  // Update photo likes
+  app.patch("/api/photos/:photoId/likes", async (req, res) => {
+    try {
+      const { likes } = req.body;
+      const photo = await storage.updatePhotoLikes(req.params.photoId, likes);
+      if (!photo) {
+        return res.status(404).json({ message: "Photo not found" });
+      }
+      res.json(photo);
+    } catch (error) {
+      res.status(500).json({ message: "Server error", error });
+    }
+  });
 
   // Admin routes
   app.get("/api/admin/stats", async (req, res) => {
