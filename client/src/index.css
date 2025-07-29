@@ -186,9 +186,34 @@ img {
 
 .bg-grid-pattern {
   background-image: 
-    linear-gradient(rgba(212, 175, 55, 0.1) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(212, 175, 55, 0.1) 1px, transparent 1px);
+    radial-gradient(circle at 1px 1px, rgba(212, 175, 55, 0.15) 1px, transparent 0);
   background-size: 20px 20px;
+}
+
+/* Mobile specific improvements */
+.mobile-menu {
+  -webkit-overflow-scrolling: touch;
+}
+
+.mobile-touch {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-spacing {
+  padding: 2rem 1rem;
+}
+
+.android-chrome-fix {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+.ios-safe-area {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 @keyframes blink {
