@@ -1,4 +1,3 @@
-
 import { Camera, Menu, X, Phone, Instagram } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -45,7 +44,7 @@ export default function Header() {
             <Camera className="h-8 w-8 text-rose-gold" />
             <h1 className="text-2xl font-playfair font-bold text-gray-800">Hafiportrait</h1>
           </div>
-          
+
           {/* Desktop Menu */}
           <div className="hidden lg:flex items-center space-x-8">
             <button
@@ -96,69 +95,79 @@ export default function Header() {
               Admin
             </Button>
           </div>
-          
+
           {/* Mobile Menu Button */}
-          <button
-            className="lg:hidden p-2 text-gray-600 hover:text-rose-gold transition-colors"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
+          <div className="lg:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="text-rose-gold mobile-touch"
+            >
+              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </Button>
+          </div>
+
+          {/* Contact Info - Desktop */}
+          <div className="hidden lg:flex items-center space-x-4">
+            {contactItems.map((item, index) => (
+              <a
+                key={index}
+                href={item.href}
+                target={item.href.startsWith('http') ? '_blank' : undefined}
+                rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                className={`flex items-center space-x-2 text-gray-700 transition-colors ${item.className}`}
+              >
+                <item.icon className="h-4 w-4" />
+                <span className="text-sm font-medium">{item.label}</span>
+              </a>
+            ))}
+          </div>
         </nav>
-        
-        {/* Mobile Menu */}
+
+        {/* Mobile Menu Overlay */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden absolute top-full left-0 right-0 bg-white/98 backdrop-blur-sm border-b border-rose-gold/20 shadow-lg">
-            <div className="px-4 py-6 space-y-4">
+          <div className="lg:hidden fixed inset-0 bg-white/95 backdrop-blur-sm z-50 mt-20 mobile-menu android-chrome-fix ios-safe-area">
+            <div className="flex flex-col items-center justify-center h-full space-y-8 text-center mobile-spacing">
               <button
                 onClick={() => scrollToSection('gallery')}
-                className="block w-full text-left py-3 text-gray-700 hover:text-rose-gold transition-colors font-medium"
+                className="text-2xl text-gray-700 hover:text-rose-gold transition-colors font-medium mobile-touch"
               >
                 Galeri
               </button>
               <button
                 onClick={() => scrollToSection('pricing')}
-                className="block w-full text-left py-3 text-gray-700 hover:text-rose-gold transition-colors font-medium"
+                className="text-2xl text-gray-700 hover:text-rose-gold transition-colors font-medium mobile-touch"
               >
                 Paket Harga
               </button>
               <button
                 onClick={() => scrollToSection('events')}
-                className="block w-full text-left py-3 text-gray-700 hover:text-rose-gold transition-colors font-medium"
+                className="text-2xl text-gray-700 hover:text-rose-gold transition-colors font-medium mobile-touch"
               >
                 Event
               </button>
               <button
                 onClick={() => scrollToSection('contact')}
-                className="block w-full text-left py-3 text-gray-700 hover:text-rose-gold transition-colors font-medium"
+                className="text-2xl text-gray-700 hover:text-rose-gold transition-colors font-medium mobile-touch"
               >
                 Kontak
               </button>
-              
-              {/* Mobile Contact */}
-              <div className="pt-4 border-t border-gray-200 space-y-3">
+
+              {/* Mobile Contact Info */}
+              <div className="space-y-4 pt-8 border-t border-gray-200 w-full max-w-xs">
                 {contactItems.map((item, index) => (
                   <a
                     key={index}
                     href={item.href}
                     target={item.href.startsWith('http') ? '_blank' : undefined}
                     rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                    className={`flex items-center space-x-3 py-2 text-gray-600 transition-colors ${item.className}`}
+                    className={`flex items-center justify-center space-x-3 text-gray-700 transition-colors mobile-touch w-full ${item.className}`}
                   >
                     <item.icon className="h-5 w-5" />
-                    <span className="font-medium">{item.label}</span>
+                    <span className="text-lg font-medium">{item.label}</span>
                   </a>
                 ))}
-                <Button 
-                  variant="outline" 
-                  className="w-full mt-4 border-rose-gold text-rose-gold hover:bg-rose-gold hover:text-white"
-                  onClick={() => {
-                    setLocation('/admin');
-                    setIsMobileMenuOpen(false);
-                  }}
-                >
-                  Admin Dashboard
-                </Button>
               </div>
             </div>
           </div>

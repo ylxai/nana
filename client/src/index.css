@@ -184,19 +184,29 @@ img {
   animation: blink 1s infinite;
 }
 
-  .bg-grid-pattern {
-    background-image: 
-      linear-gradient(rgba(212, 175, 55, 0.1) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(212, 175, 55, 0.1) 1px, transparent 1px);
-    background-size: 20px 20px;
-  }
+.bg-grid-pattern {
+  background-image: 
+    linear-gradient(rgba(212, 175, 55, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212, 175, 55, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
 
 @keyframes blink {
   0%, 50% { opacity: 1; }
   51%, 100% { opacity: 0; }
 }
 
-/* Enhanced mobile experience */
+/* Card hover effects */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Mobile optimizations */
 @media (max-width: 768px) {
   .typing-3d-text {
     font-size: 2rem;
@@ -206,12 +216,59 @@ img {
   .hero-gradient {
     padding-top: 6rem;
   }
+
+  /* Mobile navigation improvements */
+  .mobile-menu {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  /* Touch-friendly buttons on mobile */
+  .mobile-touch {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Improved spacing for mobile */
+  .mobile-spacing {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
 }
 
 @media (min-width: 1024px) {
   .photo-grid {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 1.25rem;
+  }
+}
+
+/* Enhanced animation performance */
+@media (prefers-reduced-motion: reduce) {
+  .typing-3d-text,
+  .card-hover,
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+  /* iOS specific styles */
+  .ios-safe-area {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Chrome Android specific optimizations */
+@media screen and (max-width: 768px) {
+  .android-chrome-fix {
+    /* Prevent horizontal scrolling on Android Chrome */
+    overflow-x: hidden;
+    width: 100%;
   }
 }
 
