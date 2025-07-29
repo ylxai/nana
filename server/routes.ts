@@ -146,6 +146,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Gallery routes
+  app.post("/api/admin/gallery", async (req, res) => {
+    try {
+      const { category, photoData } = req.body;
+      const result = await storage.addGalleryPhoto(category, photoData);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: "Server error", error });
+    }
+  });
+
+  app.get("/api/admin/gallery/:category?", async (req, res) => {
+    try {
+      const photos = await storage.getGalleryPhotos(req.params.category);
+      res.json(photos);
+    } catch (error) {
+      res.status(500).json({ message: "Server error", error });
+    }
+  });
+
+  app.delete("/api/admin/gallery/:photoId", async (req, res) => {
+    try {
+      const result = await storage.deleteGalleryPhoto(req.params.photoId);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: "Server error", error });
+    }
+  });
+
+  // Pricing routes
+  app.get("/api/admin/pricing", async (req, res) => {
+    try {
+      const pricing = await storage.getPricing();
+      res.json(pricing);
+    } catch (error) {
+      res.status(500).json({ message: "Server error", error });
+    }
+  });
+
+  app.post("/api/admin/pricing", async (req, res) => {
+    try {
+      const result = await storage.updatePricing(req.body);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: "Server error", error });
+    }
+  });
+
+  app.post("/api/admin/pricing/pdf", upload.single('pdf'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No PDF file uploaded" });
+      }
+
+      const result = await storage.uploadPricingPDF({
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        path: req.file.path,
+        size: req.file.size
+      });
+
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: "Server error", error });
+    }
+  });
+
   // Admin routes
   app.get("/api/admin/stats", async (req, res) => {
     try {

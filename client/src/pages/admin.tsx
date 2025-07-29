@@ -39,6 +39,10 @@ export default function AdminDashboard() {
   const [selectedEventForUpload, setSelectedEventForUpload] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
   const [recentPhotos, setRecentPhotos] = useState<Photo[]>([]);
+  const [galleryPhotos, setGalleryPhotos] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState("weddings");
+  const [pricing, setPricing] = useState<any>({});
+  const [pricingPDF, setPricingPDF] = useState<File | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -183,6 +187,109 @@ export default function AdminDashboard() {
       toast({
         title: "Delete Failed",
         description: "Could not delete the photo.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Gallery photo upload
+  const handleGalleryPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    
+    for (const file of files) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File Too Large",
+          description: `${file.name} exceeds 10MB limit.`,
+          variant: "destructive",
+        });
+        continue;
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append('photo', file);
+        formData.append('category', selectedCategory);
+
+        const response = await fetch('/api/admin/gallery', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (response.ok) {
+          toast({
+            title: "Upload Success",
+            description: "Gallery photo uploaded successfully.",
+          });
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+      }
+    }
+  };
+
+  // Load pricing data
+  const loadPricing = async () => {
+    try {
+      const response = await apiRequest("GET", "/api/admin/pricing");
+      const pricingData = await response.json();
+      setPricing(pricingData);
+    } catch (error) {
+      console.error('Error loading pricing:', error);
+    }
+  };
+
+  // Update pricing
+  const savePricing = async () => {
+    try {
+      await apiRequest("POST", "/api/admin/pricing", pricing);
+      toast({
+        title: "Pricing Updated",
+        description: "Pricing has been saved successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Save Failed",
+        description: "Could not save pricing.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Upload pricing PDF
+  const handlePricingPDFUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      toast({
+        title: "Invalid File",
+        description: "Please upload a PDF file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('pdf', file);
+
+      const response = await fetch('/api/admin/pricing/pdf', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        setPricingPDF(file);
+        toast({
+          title: "PDF Uploaded",
+          description: "Pricing PDF has been uploaded successfully.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Upload Failed",
+        description: "Could not upload PDF.",
         variant: "destructive",
       });
     }
@@ -565,7 +672,10 @@ export default function AdminDashboard() {
           <TabsContent value="gallery" className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold">Gallery Management</h2>
-              <Button className="bg-rose-gold text-white hover:bg-deep-rose">
+              <Button 
+                className="bg-rose-gold text-white hover:bg-deep-rose"
+                onClick={() => document.querySelector<HTMLInputElement>('#gallery-upload')?.click()}
+              >
                 <Camera className="h-4 w-4 mr-2" />
                 Add to Gallery
               </Button>
@@ -574,9 +684,23 @@ export default function AdminDashboard() {
             <div className="grid md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Portfolio Gallery</CardTitle>
+                  <CardTitle>Upload Portfolio Photos</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">Category</label>
+                    <select 
+                      className="w-full p-2 border border-gray-300 rounded-md"
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                    >
+                      <option value="weddings">Weddings</option>
+                      <option value="engagement">Engagement</option>
+                      <option value="prewedding">Pre-wedding</option>
+                      <option value="family">Family</option>
+                    </select>
+                  </div>
+
                   <div className="flex items-center justify-center w-full">
                     <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-rose-gold border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
@@ -584,20 +708,17 @@ export default function AdminDashboard() {
                         <p className="mb-2 text-sm text-gray-500">
                           <span className="font-semibold">Upload Portfolio Photos</span>
                         </p>
-                        <p className="text-xs text-gray-500">High quality wedding photos for gallery</p>
+                        <p className="text-xs text-gray-500">High quality wedding photos for {selectedCategory}</p>
                       </div>
-                      <input type="file" multiple accept="image/*" className="hidden" />
+                      <input 
+                        id="gallery-upload"
+                        type="file" 
+                        multiple 
+                        accept="image/*" 
+                        className="hidden"
+                        onChange={handleGalleryPhotoUpload}
+                      />
                     </label>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium">Category</label>
-                    <select className="w-full p-2 border border-gray-300 rounded-md">
-                      <option value="weddings">Weddings</option>
-                      <option value="engagement">Engagement</option>
-                      <option value="prewedding">Pre-wedding</option>
-                      <option value="family">Family</option>
-                    </select>
                   </div>
                 </CardContent>
               </Card>
@@ -608,22 +729,24 @@ export default function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <span className="font-medium">Wedding Portfolio</span>
-                      <Badge>45 Photos</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <span className="font-medium">Engagement Sessions</span>
-                      <Badge>23 Photos</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <span className="font-medium">Pre-wedding</span>
-                      <Badge>38 Photos</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <span className="font-medium">Family Portraits</span>
-                      <Badge>12 Photos</Badge>
-                    </div>
+                    {['weddings', 'engagement', 'prewedding', 'family'].map((category) => (
+                      <div key={category} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="font-medium capitalize">{category}</span>
+                        <Badge>{galleryPhotos.filter(p => p.category === category).length} Photos</Badge>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-3 gap-2">
+                    {galleryPhotos.slice(0, 6).map((photo, index) => (
+                      <div key={index} className="aspect-square rounded-lg overflow-hidden">
+                        <img
+                          src={photo.url || "https://images.unsplash.com/photo-1522673607200-164d1b6ce486"}
+                          alt={photo.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
@@ -633,9 +756,12 @@ export default function AdminDashboard() {
           <TabsContent value="pricing" className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold">Pricing Management</h2>
-              <Button className="bg-rose-gold text-white hover:bg-deep-rose">
+              <Button 
+                className="bg-rose-gold text-white hover:bg-deep-rose"
+                onClick={savePricing}
+              >
                 <Settings className="h-4 w-4 mr-2" />
-                Update Pricing
+                Save Pricing
               </Button>
             </div>
 
@@ -651,12 +777,17 @@ export default function AdminDashboard() {
                       <Badge variant="outline">Popular</Badge>
                     </div>
                     <div className="space-y-2">
-                      <Input placeholder="Price (Rp)" defaultValue="5000000" />
+                      <Input 
+                        placeholder="Price (Rp)" 
+                        value={pricing.basic?.price || "5000000"}
+                        onChange={(e) => setPricing({...pricing, basic: {...pricing.basic, price: e.target.value}})}
+                      />
                       <textarea 
                         className="w-full p-2 border border-gray-300 rounded-md text-sm"
                         rows={3}
                         placeholder="Package description..."
-                        defaultValue="4 jam liputan, 100 foto edit, USB flashdisk, online gallery"
+                        value={pricing.basic?.description || "4 jam liputan, 100 foto edit, USB flashdisk, online gallery"}
+                        onChange={(e) => setPricing({...pricing, basic: {...pricing.basic, description: e.target.value}})}
                       />
                     </div>
                   </div>
@@ -667,12 +798,17 @@ export default function AdminDashboard() {
                       <Badge className="bg-rose-gold text-white">Recommended</Badge>
                     </div>
                     <div className="space-y-2">
-                      <Input placeholder="Price (Rp)" defaultValue="8000000" />
+                      <Input 
+                        placeholder="Price (Rp)" 
+                        value={pricing.premium?.price || "8000000"}
+                        onChange={(e) => setPricing({...pricing, premium: {...pricing.premium, price: e.target.value}})}
+                      />
                       <textarea 
                         className="w-full p-2 border border-gray-300 rounded-md text-sm"
                         rows={3}
                         placeholder="Package description..."
-                        defaultValue="8 jam liputan, 200 foto edit, album cetak, USB flashdisk, online gallery, video highlight"
+                        value={pricing.premium?.description || "8 jam liputan, 200 foto edit, album cetak, USB flashdisk, online gallery, video highlight"}
+                        onChange={(e) => setPricing({...pricing, premium: {...pricing.premium, description: e.target.value}})}
                       />
                     </div>
                   </div>
@@ -683,15 +819,58 @@ export default function AdminDashboard() {
                       <Badge variant="secondary">Luxury</Badge>
                     </div>
                     <div className="space-y-2">
-                      <Input placeholder="Price (Rp)" defaultValue="12000000" />
+                      <Input 
+                        placeholder="Price (Rp)" 
+                        value={pricing.platinum?.price || "12000000"}
+                        onChange={(e) => setPricing({...pricing, platinum: {...pricing.platinum, price: e.target.value}})}
+                      />
                       <textarea 
                         className="w-full p-2 border border-gray-300 rounded-md text-sm"
                         rows={3}
                         placeholder="Package description..."
-                        defaultValue="Full day coverage, unlimited foto edit, premium album, USB + online gallery, cinematic video, same day edit"
+                        value={pricing.platinum?.description || "Full day coverage, unlimited foto edit, premium album, USB + online gallery, cinematic video, same day edit"}
+                        onChange={(e) => setPricing({...pricing, platinum: {...pricing.platinum, description: e.target.value}})}
                       />
                     </div>
                   </div>
+
+                  {/* PDF Upload Section */}
+                  <Card className="mt-6">
+                    <CardHeader>
+                      <CardTitle className="text-lg">Pricing PDF</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-center w-full">
+                          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-rose-gold border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                              <Download className="w-8 h-8 mb-3 text-rose-gold" />
+                              <p className="mb-2 text-sm text-gray-500">
+                                <span className="font-semibold">Upload Pricing PDF</span>
+                              </p>
+                              <p className="text-xs text-gray-500">PDF file with detailed pricing</p>
+                            </div>
+                            <input 
+                              type="file" 
+                              accept=".pdf" 
+                              className="hidden"
+                              onChange={handlePricingPDFUpload}
+                            />
+                          </label>
+                        </div>
+
+                        {pricingPDF && (
+                          <div className="p-4 bg-green-50 rounded-lg">
+                            <div className="flex items-center space-x-2">
+                              <Download className="h-5 w-5 text-green-600" />
+                              <span className="text-sm font-medium text-green-800">{pricingPDF.name}</span>
+                              <Badge className="bg-green-600 text-white">Uploaded</Badge>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
                 </CardContent>
               </Card>
 
