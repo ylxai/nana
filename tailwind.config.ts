@@ -61,6 +61,11 @@ export default {
           border: "var(--sidebar-border)",
           ring: "var(--sidebar-ring)",
         },
+        // Custom wedding theme colors
+        "wedding-ivory": "#FFF9F2",
+        "rose-gold": "#E8B4BC",
+        "deep-rose": "#D4949E",
+        "warm-ivory": "#FBF6F0",
       },
       keyframes: {
         "accordion-down": {
