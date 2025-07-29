@@ -71,36 +71,23 @@ export default function HeroSection() {
               No apps. No fuss. Just memories. Create your celebration album in seconds and let guests upload their favorite moments.
             </p>
 
-            {/* Quick Event Creation Form */}
+            {/* Admin Notice */}
             <Card className="p-8 mb-8 max-w-md mx-auto lg:mx-0 shadow-xl">
-              <CardContent className="p-0">
-                <h3 className="text-2xl font-semibold mb-4 text-center">Create Event in 10 Seconds</h3>
-                <div className="space-y-4">
-                  <Input
-                    type="text"
-                    placeholder="Event Name (e.g., Sarah & Tom's Wedding)"
-                    value={eventName}
-                    onChange={(e) => setEventName(e.target.value)}
-                    className="focus:ring-2 focus:ring-rose-gold focus:border-transparent"
-                  />
-                  <Input
-                    type="date"
-                    value={eventDate}
-                    onChange={(e) => setEventDate(e.target.value)}
-                    className="focus:ring-2 focus:ring-rose-gold focus:border-transparent"
-                  />
-                  <Button
-                    onClick={handleCreateEvent}
-                    disabled={createEventMutation.isPending}
-                    className="w-full bg-rose-gold text-white hover:bg-deep-rose gentle-pulse"
-                  >
-                    <Wand2 className="mr-2 h-4 w-4" />
-                    {createEventMutation.isPending ? "Creating..." : "Create My Album"}
-                  </Button>
-                </div>
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg text-center">
+              <CardContent className="p-0 text-center">
+                <h3 className="text-2xl font-semibold mb-4">Buat Acara Baru</h3>
+                <p className="text-gray-600 mb-4">
+                  Hanya admin yang dapat membuat acara baru. Silakan masuk ke dashboard admin untuk membuat acara.
+                </p>
+                <Button 
+                  onClick={() => setLocation('/admin')}
+                  className="w-full bg-rose-gold text-white hover:bg-deep-rose"
+                >
+                  <Wand2 className="mr-2 h-4 w-4" />
+                  Masuk Admin
+                </Button>
+                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                   <QrCode className="h-8 w-8 text-rose-gold mx-auto mb-2" />
-                  <p className="text-sm text-gray-600">Instant QR code + shareable link generated</p>
+                  <p className="text-sm text-gray-600">QR code dan link akan dibuat otomatis</p>
                 </div>
               </CardContent>
             </Card>

@@ -51,18 +51,12 @@ export default function Header() {
           </div>
           
           <div className="flex items-center space-x-3">
-            <Button variant="ghost" className="text-gray-600 hover:text-rose-gold">
-              Sign In
-            </Button>
             <Button 
               variant="ghost" 
-              className="text-gray-600 hover:text-rose-gold hidden md:block"
+              className="text-gray-600 hover:text-rose-gold"
               onClick={() => window.location.href = '/admin'}
             >
               Admin
-            </Button>
-            <Button className="bg-rose-gold text-white hover:bg-deep-rose">
-              Start Free
             </Button>
           </div>
         </nav>

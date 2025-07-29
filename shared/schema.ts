@@ -10,6 +10,7 @@ export const events = pgTable("events", {
   qrCode: text("qr_code").notNull(),
   shareableLink: text("shareable_link").notNull(),
   isPremium: boolean("is_premium").default(false),
+  accessCode: text("access_code").notNull().default("GUEST"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -21,7 +22,8 @@ export const photos = pgTable("photos", {
   url: text("url").notNull(),
   uploaderName: text("uploader_name"),
   uploadedAt: timestamp("uploaded_at").defaultNow(),
-  albumName: text("album_name").default("Main"),
+  albumName: text("album_name").default("Tamu"),
+  likes: integer("likes").default(0),
 });
 
 export const messages = pgTable("messages", {

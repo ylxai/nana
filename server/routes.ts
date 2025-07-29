@@ -107,19 +107,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update message hearts
-  app.patch("/api/messages/:messageId/hearts", async (req, res) => {
-    try {
-      const { hearts } = req.body;
-      const message = await storage.updateMessageHearts(req.params.messageId, hearts);
-      if (!message) {
-        return res.status(404).json({ message: "Message not found" });
-      }
-      res.json(message);
-    } catch (error) {
-      res.status(500).json({ message: "Server error", error });
-    }
-  });
+
 
   // Admin routes
   app.get("/api/admin/stats", async (req, res) => {

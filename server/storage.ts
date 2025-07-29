@@ -10,12 +10,14 @@ export interface IStorage {
   getEventByShareableLink(link: string): Promise<Event | undefined>;
   getAllEvents(): Promise<Event[]>;
   deleteEvent(id: string): Promise<void>;
+  verifyEventAccessCode(eventId: string, accessCode: string): Promise<boolean>;
   
   // Photos
   addPhoto(photo: InsertPhoto): Promise<Photo>;
   getEventPhotos(eventId: string): Promise<Photo[]>;
   getPhotosByAlbum(eventId: string, albumName: string): Promise<Photo[]>;
   getTotalPhotosCount(): Promise<number>;
+  updatePhotoLikes(photoId: string, likes: number): Promise<Photo | undefined>;
   
   // Messages
   addMessage(message: InsertMessage): Promise<Message>;
@@ -40,11 +42,13 @@ export class MemStorage implements IStorage {
     const shareableLink = `https://wedibox.app/event/${id}`;
     const qrCode = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(shareableLink)}`;
     
+    const accessCode = Math.random().toString(36).substring(2, 8).toUpperCase();
     const event: Event = {
       ...insertEvent,
       id,
       qrCode,
       shareableLink,
+      accessCode,
       isPremium: insertEvent.isPremium ?? false,
       createdAt: new Date(),
     };
@@ -66,9 +70,10 @@ export class MemStorage implements IStorage {
     const photo: Photo = {
       ...insertPhoto,
       id,
-      albumName: insertPhoto.albumName ?? "Main",
+      albumName: insertPhoto.albumName ?? "Tamu",
       uploaderName: insertPhoto.uploaderName ?? null,
       uploadedAt: new Date(),
+      likes: 0,
     };
     
     this.photos.set(id, photo);
@@ -144,12 +149,28 @@ export class MemStorage implements IStorage {
   async getTotalMessagesCount(): Promise<number> {
     return this.messages.size;
   }
+
+  async updatePhotoLikes(photoId: string, likes: number): Promise<Photo | undefined> {
+    const photo = this.photos.get(photoId);
+    if (photo) {
+      const updated = { ...photo, likes };
+      this.photos.set(photoId, updated);
+      return updated;
+    }
+    return undefined;
+  }
+
+  async verifyEventAccessCode(eventId: string, accessCode: string): Promise<boolean> {
+    const event = this.events.get(eventId);
+    return event ? event.accessCode === accessCode : false;
+  }
 }
 
 // Database storage implementation
 export class DatabaseStorage implements IStorage {
   async createEvent(insertEvent: InsertEvent): Promise<Event> {
     const id = randomUUID();
+    const accessCode = Math.random().toString(36).substring(2, 8).toUpperCase();
     const shareableLink = `https://wedibox.app/event/${id}`;
     const qrCode = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(shareableLink)}`;
     
@@ -158,6 +179,7 @@ export class DatabaseStorage implements IStorage {
       id,
       qrCode,
       shareableLink,
+      accessCode,
       isPremium: insertEvent.isPremium ?? false,
     };
 
@@ -183,8 +205,9 @@ export class DatabaseStorage implements IStorage {
     const photoData = {
       ...insertPhoto,
       id,
-      albumName: insertPhoto.albumName ?? "Main",
+      albumName: insertPhoto.albumName ?? "Tamu",
       uploaderName: insertPhoto.uploaderName ?? null,
+      likes: 0,
     };
 
     const [photo] = await db
@@ -256,6 +279,21 @@ export class DatabaseStorage implements IStorage {
   async getTotalMessagesCount(): Promise<number> {
     const result = await db.select({ count: sql<number>`count(*)` }).from(messages);
     return result[0]?.count || 0;
+  }
+
+  async updatePhotoLikes(photoId: string, likes: number): Promise<Photo | undefined> {
+    const [photo] = await db
+      .update(photos)
+      .set({ likes })
+      .where(eq(photos.id, photoId))
+      .returning();
+    return photo || undefined;
+  }
+
+  async verifyEventAccessCode(eventId: string, accessCode: string): Promise<boolean> {
+    const [event] = await db.select().from(events)
+      .where(and(eq(events.id, eventId), eq(events.accessCode, accessCode)));
+    return !!event;
   }
 }
 

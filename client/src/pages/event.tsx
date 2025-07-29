@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -14,27 +14,30 @@ import {
   Share2, 
   Heart,
   Download,
-  Play,
-  Pause,
   Users,
   MessageSquare,
   Calendar,
-  Clock
+  Lock,
+  Key,
+  CheckCircle
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Event, Photo, Message } from "@shared/schema";
 import LoadingSpinner from "@/components/ui/loading-spinner";
+import PhotoLightbox from "@/components/photo-lightbox";
 
 export default function EventPage() {
   const { id } = useParams();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [uploaderName, setUploaderName] = useState("");
-  const [selectedAlbum, setSelectedAlbum] = useState("Main");
+  const [accessCode, setAccessCode] = useState("");
+  const [isCodeVerified, setIsCodeVerified] = useState(false);
+  const [selectedAlbum, setSelectedAlbum] = useState("Tamu");
   const [guestName, setGuestName] = useState("");
   const [messageText, setMessageText] = useState("");
-  const [isSlideshow, setIsSlideshow] = useState(false);
+  const [lightboxPhoto, setLightboxPhoto] = useState<number | null>(null);
 
   // Fetch event details
   const { data: event, isLoading: eventLoading } = useQuery({
@@ -46,14 +49,14 @@ export default function EventPage() {
     enabled: !!id,
   });
 
-  // Fetch event photos
+  // Fetch event photos for current album
   const { data: photos = [], isLoading: photosLoading } = useQuery({
-    queryKey: ['/api/events', id, 'photos'],
+    queryKey: ['/api/events', id, 'photos', selectedAlbum],
     queryFn: async () => {
-      const response = await apiRequest("GET", `/api/events/${id}/photos`);
+      const response = await apiRequest("GET", `/api/events/${id}/albums/${selectedAlbum}/photos`);
       return response.json() as Promise<Photo[]>;
     },
-    enabled: !!id,
+    enabled: !!id && !!selectedAlbum,
   });
 
   // Fetch event messages
@@ -66,12 +69,34 @@ export default function EventPage() {
     enabled: !!id,
   });
 
+  // Verify access code mutation
+  const verifyCodeMutation = useMutation({
+    mutationFn: async (code: string) => {
+      const response = await apiRequest("POST", `/api/events/${id}/verify-code`, { accessCode: code });
+      return response.json();
+    },
+    onSuccess: () => {
+      setIsCodeVerified(true);
+      toast({
+        title: "Kode Akses Benar!",
+        description: "Anda sekarang dapat mengupload foto.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Kode Salah",
+        description: "Silakan periksa kembali kode akses Anda.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Photo upload mutation
   const uploadPhotoMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append('photo', file);
-      formData.append('uploaderName', uploaderName || 'Anonymous');
+      formData.append('uploaderName', uploaderName || 'Anonim');
       formData.append('albumName', selectedAlbum);
 
       const response = await fetch(`/api/events/${id}/photos`, {
@@ -80,7 +105,7 @@ export default function EventPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Upload failed');
+        throw new Error('Upload gagal');
       }
 
       return response.json();
@@ -88,14 +113,14 @@ export default function EventPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/events', id, 'photos'] });
       toast({
-        title: "Photo Uploaded!",
-        description: "Your photo has been added to the album.",
+        title: "Foto Berhasil Diupload!",
+        description: "Foto Anda telah ditambahkan ke album.",
       });
     },
     onError: () => {
       toast({
-        title: "Upload Failed",
-        description: "Please try again.",
+        title: "Upload Gagal",
+        description: "Silakan coba lagi.",
         variant: "destructive",
       });
     },
@@ -112,33 +137,50 @@ export default function EventPage() {
       setGuestName("");
       setMessageText("");
       toast({
-        title: "Message Posted!",
-        description: "Your message has been added to the guestbook.",
+        title: "Pesan Berhasil Dikirim!",
+        description: "Pesan Anda telah ditambahkan ke buku tamu.",
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to post message.",
+        title: "Gagal",
+        description: "Gagal mengirim pesan.",
         variant: "destructive",
       });
     },
   });
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files) {
-      Array.from(files).forEach(file => {
-        uploadPhotoMutation.mutate(file);
-      });
-    }
+  // Heart message mutation
+  const heartMessageMutation = useMutation({
+    mutationFn: async ({ messageId, hearts }: { messageId: string; hearts: number }) => {
+      const response = await apiRequest("PATCH", `/api/messages/${messageId}/hearts`, { hearts });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/events', id, 'messages'] });
+    },
+  });
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    files.forEach(file => {
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File Terlalu Besar",
+          description: "Ukuran file maksimal 10MB.",
+          variant: "destructive",
+        });
+        return;
+      }
+      uploadPhotoMutation.mutate(file);
+    });
   };
 
-  const handleAddMessage = () => {
+  const handleSubmitMessage = () => {
     if (!guestName.trim() || !messageText.trim()) {
       toast({
-        title: "Missing Information",
-        description: "Please enter your name and message.",
+        title: "Informasi Kurang",
+        description: "Mohon isi nama dan pesan.",
         variant: "destructive",
       });
       return;
@@ -150,31 +192,18 @@ export default function EventPage() {
     });
   };
 
-  const shareEvent = () => {
-    if (navigator.share && event) {
-      navigator.share({
-        title: event.name,
-        text: "Check out photos from this celebration!",
-        url: event.shareableLink,
-      });
-    } else if (event) {
-      navigator.clipboard.writeText(event.shareableLink);
-      toast({
-        title: "Link Copied!",
-        description: "Share this link with your guests.",
-      });
-    }
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Berhasil Disalin!",
+      description: "Link telah disalin ke clipboard.",
+    });
   };
-
-  // Get unique albums
-  const albumsSet = new Set(photos.map(photo => photo.albumName));
-  const albums = Array.from(albumsSet).filter(Boolean);
-  if (albums.length === 0) albums.push("Main");
 
   if (eventLoading) {
     return (
       <div className="min-h-screen bg-wedding-ivory flex items-center justify-center">
-        <LoadingSpinner size="lg" />
+        <LoadingSpinner />
       </div>
     );
   }
@@ -182,39 +211,45 @@ export default function EventPage() {
   if (!event) {
     return (
       <div className="min-h-screen bg-wedding-ivory flex items-center justify-center">
-        <Card className="p-8 text-center">
-          <h1 className="text-2xl font-bold mb-4">Event Not Found</h1>
-          <p className="text-gray-600">The event you're looking for doesn't exist.</p>
-        </Card>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-800 mb-4">Acara Tidak Ditemukan</h1>
+          <p className="text-gray-600">Acara yang Anda cari tidak ada atau telah dihapus.</p>
+        </div>
       </div>
     );
   }
+
+  const needsAccessCode = (selectedAlbum === "Tamu" || selectedAlbum === "Bridesmaid") && !isCodeVerified;
 
   return (
     <div className="min-h-screen bg-wedding-ivory">
       {/* Header */}
       <header className="bg-white/90 backdrop-blur-sm border-b border-rose-gold/20 p-4">
         <div className="container mx-auto">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-800">{event.name}</h1>
-              <div className="flex items-center text-gray-600 text-sm">
-                <Calendar className="h-4 w-4 mr-1" />
-                {new Date(event.date).toLocaleDateString()}
-                <Clock className="h-4 w-4 ml-4 mr-1" />
-                {photos.length} photos
-                <Users className="h-4 w-4 ml-4 mr-1" />
-                {messages.length} messages
-              </div>
+              <p className="text-gray-600">
+                {new Date(event.date).toLocaleDateString('id-ID', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </p>
             </div>
-            
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={shareEvent}>
-                <Share2 className="h-4 w-4 mr-2" />
-                Share
-              </Button>
-              <Button 
+            <div className="flex items-center space-x-2">
+              <Button
                 variant="outline"
+                size="sm"
+                onClick={() => copyToClipboard(event.shareableLink)}
+              >
+                <Share2 className="h-4 w-4 mr-2" />
+                Bagikan
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => window.open(event.qrCode, '_blank')}
               >
                 <QrCode className="h-4 w-4 mr-2" />
@@ -226,207 +261,343 @@ export default function EventPage() {
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2">
-            <Tabs defaultValue="photos" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="photos">Photos</TabsTrigger>
-                <TabsTrigger value="slideshow">Slideshow</TabsTrigger>
-                <TabsTrigger value="guestbook">Guestbook</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="photos" className="space-y-6">
-                {/* Album tabs */}
-                {albums.length > 1 && (
-                  <div className="flex gap-2 flex-wrap">
-                    {albums.map(album => (
-                      <Badge
-                        key={album}
-                        variant={selectedAlbum === album ? "default" : "outline"}
-                        className="cursor-pointer"
-                        onClick={() => setSelectedAlbum(album || "Main")}
-                      >
-                        {album}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-
-                {/* Photo grid */}
-                <div className="grid md:grid-cols-3 gap-4">
-                  {photos
-                    .filter(photo => photo.albumName === selectedAlbum)
-                    .map((photo, index) => (
-                    <div key={photo.id} className="photo-hover rounded-lg overflow-hidden bg-white shadow-sm">
-                      <img
-                        src={photo.url}
-                        alt={photo.originalName}
-                        className="w-full h-48 object-cover transition-transform duration-300"
-                      />
-                      <div className="p-3">
-                        <p className="text-xs text-gray-500">
-                          by {photo.uploaderName || 'Anonymous'}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {photosLoading && (
-                  <div className="text-center py-8">
-                    <LoadingSpinner />
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="slideshow" className="space-y-6">
-                {photos.length > 0 ? (
-                  <div className="relative bg-black rounded-lg overflow-hidden">
-                    <img
-                      src={photos[0]?.url}
-                      alt="Slideshow"
-                      className="w-full h-96 object-contain"
-                    />
-                    <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-                      <Button
-                        variant="secondary"
-                        onClick={() => setIsSlideshow(!isSlideshow)}
-                      >
-                        {isSlideshow ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                      </Button>
-                      <Badge className="bg-black/50 text-white">
-                        1 of {photos.length}
-                      </Badge>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-12 text-gray-500">
-                    No photos yet. Upload some photos to start the slideshow!
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="guestbook" className="space-y-6">
-                <div className="space-y-4">
-                  {messages.map((message) => (
-                    <Card key={message.id} className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-semibold">{message.guestName}</h4>
-                          <p className="text-gray-600 mt-1">{message.message}</p>
-                          <p className="text-xs text-gray-400 mt-2">
-                            {new Date(message.createdAt!).toLocaleString()}
-                          </p>
-                        </div>
-                        <div className="flex items-center text-red-500">
-                          <Heart className="h-4 w-4 mr-1" />
-                          {message.hearts}
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-
-                {messagesLoading && (
-                  <div className="text-center py-8">
-                    <LoadingSpinner />
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Upload Photos */}
-            <Card>
-              <CardHeader>
-                <h3 className="text-lg font-semibold flex items-center">
-                  <Camera className="h-5 w-5 mr-2 text-rose-gold" />
-                  Upload Photos
-                </h3>
-              </CardHeader>
-              <CardContent className="space-y-4">
+        {/* Access Code Section for Tamu and Bridesmaid */}
+        {needsAccessCode && (
+          <Card className="mb-8 max-w-md mx-auto">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Lock className="h-5 w-5 mr-2" />
+                Masukkan Kode Akses
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Album "{selectedAlbum}" memerlukan kode akses untuk mengupload foto. 
+                Dapatkan kode dari penyelenggara acara.
+              </p>
+              <div className="flex space-x-2">
                 <Input
-                  placeholder="Your name (optional)"
-                  value={uploaderName}
-                  onChange={(e) => setUploaderName(e.target.value)}
+                  type="text"
+                  placeholder="Masukkan kode akses"
+                  value={accessCode}
+                  onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
+                  className="uppercase"
                 />
-                
-                <select
-                  value={selectedAlbum}
-                  onChange={(e) => setSelectedAlbum(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md"
+                <Button
+                  onClick={() => verifyCodeMutation.mutate(accessCode)}
+                  disabled={!accessCode.trim() || verifyCodeMutation.isPending}
                 >
-                  {albums.map(album => (
-                    <option key={album} value={album || "Main"}>{album || "Main"}</option>
-                  ))}
-                </select>
+                  <Key className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    id="photo-upload"
-                  />
-                  <label htmlFor="photo-upload" className="cursor-pointer">
-                    <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600">
-                      Click to upload or drag photos here
-                    </p>
-                  </label>
-                </div>
+        {/* Main Tabs */}
+        <Tabs value={selectedAlbum} onValueChange={setSelectedAlbum} className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="Official">Official</TabsTrigger>
+            <TabsTrigger value="Tamu">Tamu</TabsTrigger>
+            <TabsTrigger value="Bridesmaid">Bridesmaid</TabsTrigger>
+            <TabsTrigger value="Guestbook">Guestbook</TabsTrigger>
+          </TabsList>
 
-                {uploadPhotoMutation.isPending && (
-                  <div className="text-center">
-                    <LoadingSpinner className="text-rose-gold" />
-                    <p className="text-sm text-gray-600 mt-2">Uploading...</p>
+          {/* Official Photos Tab */}
+          <TabsContent value="Official" className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold mb-2">Foto Official</h2>
+              <p className="text-gray-600 mb-6">Foto resmi dari fotografer acara</p>
+            </div>
+
+            {photosLoading ? (
+              <div className="text-center py-8">
+                <LoadingSpinner />
+              </div>
+            ) : photos.length > 0 ? (
+              <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {photos.map((photo, index) => (
+                  <div 
+                    key={photo.id} 
+                    className="relative group cursor-pointer"
+                    onClick={() => setLightboxPhoto(index)}
+                  >
+                    <img
+                      src={photo.url}
+                      alt={photo.originalName}
+                      className="w-full h-48 object-cover rounded-lg"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all rounded-lg flex items-center justify-center">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="secondary" size="sm">
+                          Lihat
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-gray-500">
+                <Camera className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>Belum ada foto official yang diupload.</p>
+              </div>
+            )}
+          </TabsContent>
 
-            {/* Add Message */}
-            <Card>
-              <CardHeader>
-                <h3 className="text-lg font-semibold flex items-center">
-                  <MessageSquare className="h-5 w-5 mr-2 text-rose-gold" />
-                  Leave a Message
-                </h3>
-              </CardHeader>
-              <CardContent className="space-y-4">
+          {/* Guest Photos Tab */}
+          <TabsContent value="Tamu" className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold mb-2">Foto Tamu</h2>
+              <p className="text-gray-600 mb-6">Upload dan lihat foto dari para tamu</p>
+            </div>
+
+            {/* Upload Section */}
+            {(isCodeVerified || selectedAlbum === "Official") && (
+              <Card className="p-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center w-full">
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-rose-gold border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <Upload className="w-8 h-8 mb-3 text-rose-gold" />
+                        <p className="mb-2 text-sm text-gray-500">
+                          <span className="font-semibold">Klik untuk upload</span> atau drag & drop
+                        </p>
+                        <p className="text-xs text-gray-500">PNG, JPG, atau GIF (maks. 10MB)</p>
+                      </div>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                  <Input
+                    type="text"
+                    placeholder="Nama Anda (opsional)"
+                    value={uploaderName}
+                    onChange={(e) => setUploaderName(e.target.value)}
+                  />
+                </div>
+              </Card>
+            )}
+
+            {/* Photos Grid */}
+            {photosLoading ? (
+              <div className="text-center py-8">
+                <LoadingSpinner />
+              </div>
+            ) : photos.length > 0 ? (
+              <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {photos.map((photo, index) => (
+                  <div 
+                    key={photo.id} 
+                    className="relative group cursor-pointer"
+                    onClick={() => setLightboxPhoto(index)}
+                  >
+                    <img
+                      src={photo.url}
+                      alt={photo.originalName}
+                      className="w-full h-48 object-cover rounded-lg"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all rounded-lg flex items-center justify-center">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity text-white">
+                        <div className="flex items-center space-x-2">
+                          <Heart className="h-4 w-4" />
+                          <span>{photo.likes || 0}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-gray-500">
+                <Camera className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>Belum ada foto yang diupload. Jadilah yang pertama!</p>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Bridesmaid Photos Tab */}
+          <TabsContent value="Bridesmaid" className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold mb-2">Foto Bridesmaid</h2>
+              <p className="text-gray-600 mb-6">Album khusus untuk para bridesmaid</p>
+            </div>
+
+            {/* Upload Section */}
+            {(isCodeVerified || selectedAlbum === "Official") && (
+              <Card className="p-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center w-full">
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-rose-gold border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <Upload className="w-8 h-8 mb-3 text-rose-gold" />
+                        <p className="mb-2 text-sm text-gray-500">
+                          <span className="font-semibold">Klik untuk upload</span> atau drag & drop
+                        </p>
+                        <p className="text-xs text-gray-500">PNG, JPG, atau GIF (maks. 10MB)</p>
+                      </div>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                  <Input
+                    type="text"
+                    placeholder="Nama Anda (opsional)"
+                    value={uploaderName}
+                    onChange={(e) => setUploaderName(e.target.value)}
+                  />
+                </div>
+              </Card>
+            )}
+
+            {/* Photos Grid */}
+            {photosLoading ? (
+              <div className="text-center py-8">
+                <LoadingSpinner />
+              </div>
+            ) : photos.length > 0 ? (
+              <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {photos.map((photo, index) => (
+                  <div 
+                    key={photo.id} 
+                    className="relative group cursor-pointer"
+                    onClick={() => setLightboxPhoto(index)}
+                  >
+                    <img
+                      src={photo.url}
+                      alt={photo.originalName}
+                      className="w-full h-48 object-cover rounded-lg"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all rounded-lg flex items-center justify-center">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity text-white">
+                        <div className="flex items-center space-x-2">
+                          <Heart className="h-4 w-4" />
+                          <span>{photo.likes || 0}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-gray-500">
+                <Camera className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>Belum ada foto bridesmaid yang diupload.</p>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Guestbook Tab */}
+          <TabsContent value="Guestbook" className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold mb-2">Buku Tamu Digital</h2>
+              <p className="text-gray-600 mb-6">Tinggalkan pesan dan ucapan untuk pengantin</p>
+            </div>
+
+            {/* Message Form */}
+            <Card className="p-6">
+              <div className="space-y-4">
                 <Input
-                  placeholder="Your name"
+                  type="text"
+                  placeholder="Nama Anda"
                   value={guestName}
                   onChange={(e) => setGuestName(e.target.value)}
                 />
                 <Textarea
-                  placeholder="Write a heartfelt message..."
+                  placeholder="Tulis pesan atau ucapan Anda..."
                   value={messageText}
                   onChange={(e) => setMessageText(e.target.value)}
                   rows={3}
                 />
                 <Button
-                  onClick={handleAddMessage}
+                  onClick={handleSubmitMessage}
                   disabled={addMessageMutation.isPending}
                   className="w-full bg-rose-gold text-white hover:bg-deep-rose"
                 >
-                  {addMessageMutation.isPending ? (
-                    <LoadingSpinner size="sm" className="mr-2" />
-                  ) : (
-                    <Heart className="h-4 w-4 mr-2" />
-                  )}
-                  Post Message
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  {addMessageMutation.isPending ? "Mengirim..." : "Kirim Pesan"}
                 </Button>
-              </CardContent>
+              </div>
             </Card>
+
+            {/* Messages List */}
+            {messagesLoading ? (
+              <div className="text-center py-8">
+                <LoadingSpinner />
+              </div>
+            ) : messages.length > 0 ? (
+              <div className="space-y-4">
+                {messages.map((message) => (
+                  <Card key={message.id} className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-800">{message.guestName}</h4>
+                        <p className="text-gray-600 mt-1">{message.message}</p>
+                        <p className="text-xs text-gray-400 mt-2">
+                          {new Date(message.createdAt!).toLocaleDateString('id-ID', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => heartMessageMutation.mutate({
+                          messageId: message.id,
+                          hearts: (message.hearts || 0) + 1
+                        })}
+                        className="flex items-center space-x-1 text-rose-gold hover:bg-rose-gold/10"
+                      >
+                        <Heart className="h-4 w-4" />
+                        <span>{message.hearts || 0}</span>
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-gray-500">
+                <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>Belum ada pesan. Jadilah yang pertama menulis ucapan!</p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+
+        {/* Info Card */}
+        <Card className="mt-8 p-6 bg-gradient-to-r from-rose-gold/10 to-deep-rose/10">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold mb-2">Kode Akses: {event.accessCode}</h3>
+            <p className="text-sm text-gray-600">
+              Bagikan kode ini kepada tamu untuk mengupload foto ke album Tamu dan Bridesmaid
+            </p>
           </div>
-        </div>
+        </Card>
       </div>
+
+      {/* Photo Lightbox */}
+      {lightboxPhoto !== null && photos.length > 0 && (
+        <PhotoLightbox
+          photos={photos}
+          currentIndex={lightboxPhoto}
+          onClose={() => setLightboxPhoto(null)}
+          eventId={id!}
+        />
+      )}
     </div>
   );
 }
