@@ -354,21 +354,22 @@ export default function EventPage() {
 
             {/* Upload Section */}
             {(isCodeVerified || selectedAlbum === "Official") && (
-              <Card className="p-6">
+              <Card className="p-4 sm:p-6">
                 <div className="space-y-4">
                   <div className="flex items-center justify-center w-full">
-                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-rose-gold border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <Upload className="w-8 h-8 mb-3 text-rose-gold" />
-                        <p className="mb-2 text-sm text-gray-500">
-                          <span className="font-semibold">Klik untuk upload</span> atau drag & drop
+                    <label className="upload-area flex flex-col items-center justify-center w-full h-32 sm:h-40 cursor-pointer touch-manipulation">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4 text-center">
+                        <Upload className="w-6 h-6 sm:w-8 sm:h-8 mb-3 text-rose-gold" />
+                        <p className="mb-2 text-sm sm:text-base text-gray-500">
+                          <span className="font-semibold">Ketuk untuk upload foto</span>
                         </p>
-                        <p className="text-xs text-gray-500">PNG, JPG, atau GIF (maks. 10MB)</p>
+                        <p className="text-xs sm:text-sm text-gray-500">PNG, JPG, atau GIF (maks. 10MB per file)</p>
                       </div>
                       <input
                         type="file"
                         multiple
                         accept="image/*"
+                        capture="environment"
                         onChange={handleFileUpload}
                         className="hidden"
                       />
@@ -379,7 +380,14 @@ export default function EventPage() {
                     placeholder="Nama Anda (opsional)"
                     value={uploaderName}
                     onChange={(e) => setUploaderName(e.target.value)}
+                    className="text-base"
                   />
+                  {uploadPhotoMutation.isPending && (
+                    <div className="flex items-center justify-center py-2">
+                      <LoadingSpinner size="sm" />
+                      <span className="ml-2 text-sm text-gray-600">Mengupload foto...</span>
+                    </div>
+                  )}
                 </div>
               </Card>
             )}
@@ -430,21 +438,22 @@ export default function EventPage() {
 
             {/* Upload Section */}
             {(isCodeVerified || selectedAlbum === "Official") && (
-              <Card className="p-6">
+              <Card className="p-4 sm:p-6">
                 <div className="space-y-4">
                   <div className="flex items-center justify-center w-full">
-                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-rose-gold border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <Upload className="w-8 h-8 mb-3 text-rose-gold" />
-                        <p className="mb-2 text-sm text-gray-500">
-                          <span className="font-semibold">Klik untuk upload</span> atau drag & drop
+                    <label className="upload-area flex flex-col items-center justify-center w-full h-32 sm:h-40 cursor-pointer touch-manipulation">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4 text-center">
+                        <Upload className="w-6 h-6 sm:w-8 sm:h-8 mb-3 text-rose-gold" />
+                        <p className="mb-2 text-sm sm:text-base text-gray-500">
+                          <span className="font-semibold">Ketuk untuk upload foto</span>
                         </p>
-                        <p className="text-xs text-gray-500">PNG, JPG, atau GIF (maks. 10MB)</p>
+                        <p className="text-xs sm:text-sm text-gray-500">PNG, JPG, atau GIF (maks. 10MB per file)</p>
                       </div>
                       <input
                         type="file"
                         multiple
                         accept="image/*"
+                        capture="environment"
                         onChange={handleFileUpload}
                         className="hidden"
                       />
@@ -455,7 +464,14 @@ export default function EventPage() {
                     placeholder="Nama Anda (opsional)"
                     value={uploaderName}
                     onChange={(e) => setUploaderName(e.target.value)}
+                    className="text-base"
                   />
+                  {uploadPhotoMutation.isPending && (
+                    <div className="flex items-center justify-center py-2">
+                      <LoadingSpinner size="sm" />
+                      <span className="ml-2 text-sm text-gray-600">Mengupload foto...</span>
+                    </div>
+                  )}
                 </div>
               </Card>
             )}

@@ -149,20 +149,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin routes
   app.get("/api/admin/stats", async (req, res) => {
     try {
-      // Get statistics from database
-      const events = await storage.getAllEvents();
-      const totalPhotos = await storage.getTotalPhotosCount();
-      const totalMessages = await storage.getTotalMessagesCount();
-      
-      const stats = {
-        totalEvents: events.length,
-        totalPhotos,
-        totalMessages,
-        activeEvents: events.filter(e => new Date(e.date) >= new Date()).length,
-        storageUsed: "2.4 GB" // This would be calculated from actual storage
-      };
-      
+      const stats = await storage.getAdminStats();
       res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: "Server error", error });
+    }
+  });
+
+  // Get recent photos for admin
+  app.get("/api/admin/recent-photos", async (req, res) => {
+    try {
+      const photos = await storage.getRecentPhotos(20); // Get last 20 photos
+      res.json(photos);
+    } catch (error) {
+      res.status(500).json({ message: "Server error", error });
+    }
+  });
+
+  // Delete photo by admin
+  app.delete("/api/admin/photos/:photoId", async (req, res) => {
+    try {
+      await storage.deletePhoto(req.params.photoId);
+      res.json({ message: "Photo deleted successfully" });
     } catch (error) {
       res.status(500).json({ message: "Server error", error });
     }

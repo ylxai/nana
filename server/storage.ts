@@ -304,6 +304,34 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return message || undefined;
   }
+
+  async getRecentPhotos(limit: number = 20): Promise<Photo[]> {
+    return await db
+      .select()
+      .from(photos)
+      .orderBy(desc(photos.createdAt))
+      .limit(limit);
+  }
+
+  async deletePhoto(photoId: string): Promise<void> {
+    // Delete the file from filesystem
+    const photo = await db.select().from(photos).where(eq(photos.id, photoId)).limit(1);
+    if (photo[0]?.url) {
+      const fs = require('fs');
+      const path = require('path');
+      const filePath = path.join(process.cwd(), 'uploads', path.basename(photo[0].url));
+      try {
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      } catch (error) {
+        console.error('Error deleting file:', error);
+      }
+    }
+
+    // Delete from database
+    await db.delete(photos).where(eq(photos.id, photoId));
+  }
 }
 
 export const storage = new DatabaseStorage();

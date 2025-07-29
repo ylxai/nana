@@ -117,7 +117,7 @@ export default function PhotoLightbox({ photos, currentIndex, onClose, eventId }
                 {currentPhoto.albumName}
               </span>
             </div>
-            
+
             <div className="flex items-center space-x-2">
               <Button
                 variant="ghost"
@@ -215,7 +215,7 @@ export default function PhotoLightbox({ photos, currentIndex, onClose, eventId }
                     })}
                   </p>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                   <Button
                     variant="ghost"

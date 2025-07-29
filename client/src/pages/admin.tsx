@@ -36,6 +36,9 @@ export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [selectedEventForUpload, setSelectedEventForUpload] = useState("");
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [recentPhotos, setRecentPhotos] = useState<Photo[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -98,6 +101,92 @@ export default function AdminDashboard() {
       });
     },
   });
+
+  // Official photo upload function
+  const handleOfficialPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!selectedEventForUpload) {
+      toast({
+        title: "Select Event",
+        description: "Please select an event first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    let completed = 0;
+    const totalFiles = files.length;
+
+    for (const file of files) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File Too Large",
+          description: `${file.name} exceeds 10MB limit.`,
+          variant: "destructive",
+        });
+        continue;
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append('photo', file);
+        formData.append('uploaderName', 'Admin');
+        formData.append('albumName', 'Official');
+
+        const response = await fetch(`/api/events/${selectedEventForUpload}/photos`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (response.ok) {
+          completed++;
+          setUploadProgress((completed / totalFiles) * 100);
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+      }
+    }
+
+    if (completed > 0) {
+      toast({
+        title: "Upload Complete",
+        description: `${completed} official photos uploaded successfully.`,
+      });
+      loadRecentPhotos();
+    }
+
+    setTimeout(() => setUploadProgress(0), 2000);
+  };
+
+  // Load recent photos
+  const loadRecentPhotos = async () => {
+    try {
+      const response = await apiRequest("GET", "/api/admin/recent-photos");
+      const photos = await response.json();
+      setRecentPhotos(photos);
+    } catch (error) {
+      console.error('Error loading recent photos:', error);
+    }
+  };
+
+  // Delete photo function
+  const deletePhoto = async (photoId: string) => {
+    try {
+      await apiRequest("DELETE", `/api/admin/photos/${photoId}`);
+      toast({
+        title: "Photo Deleted",
+        description: "Photo has been removed successfully.",
+      });
+      loadRecentPhotos();
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
+    } catch (error) {
+      toast({
+        title: "Delete Failed",
+        description: "Could not delete the photo.",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (!isAuthenticated) {
     return (
@@ -304,13 +393,98 @@ export default function AdminDashboard() {
               </div>
             </div>
 
+            {/* Event Selection for Official Upload */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Upload Official Photos</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Select Event</label>
+                  <select 
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                    onChange={(e) => setSelectedEventForUpload(e.target.value)}
+                    value={selectedEventForUpload}
+                  >
+                    <option value="">Choose an event for official photos</option>
+                    {events.map((event) => (
+                      <option key={event.id} value={event.id}>
+                        {event.name} - {new Date(event.date).toLocaleDateString()}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {selectedEventForUpload && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-center w-full">
+                      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-rose-gold border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                          <Camera className="w-8 h-8 mb-3 text-rose-gold" />
+                          <p className="mb-2 text-sm text-gray-500">
+                            <span className="font-semibold">Upload Official Photos</span>
+                          </p>
+                          <p className="text-xs text-gray-500">PNG, JPG, atau GIF (maks. 10MB per file)</p>
+                        </div>
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={handleOfficialPhotoUpload}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                    
+                    {uploadProgress > 0 && uploadProgress < 100 && (
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-rose-gold h-2 rounded-full transition-all duration-300" 
+                          style={{ width: `${uploadProgress}%` }}
+                        ></div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Recent Uploads */}
             <Card>
               <CardHeader>
                 <CardTitle>Recent Uploads</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8 text-gray-500">
-                  Photo management interface - shows recent uploads, storage usage, and moderation tools.
+                <div className="space-y-4">
+                  {recentPhotos.length > 0 ? (
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                      {recentPhotos.map((photo) => (
+                        <div key={photo.id} className="relative group">
+                          <img
+                            src={photo.url}
+                            alt={photo.originalName}
+                            className="w-full h-24 object-cover rounded-lg"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all rounded-lg flex items-center justify-center">
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => deletePhoto(photo.id)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1 truncate">{photo.albumName}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Camera className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p>No recent photo uploads.</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
