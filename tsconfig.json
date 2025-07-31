@@ -50,7 +50,7 @@
     "**/*.tsx",
     ".nextss/types/**/*.ts",
     ".next/types/**/*.ts"
-  ],
+, "src/app/admin/page.tsx_bk"  ],
   "exclude": [
     "node_modules"
   ]

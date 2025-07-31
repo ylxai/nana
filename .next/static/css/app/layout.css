@@ -583,6 +583,51 @@ video {
     max-width: 1400px;
   }
 }
+/* Mobile-friendly touch targets */
+/* Mobile-optimized delete button */
+.mobile-delete-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  opacity: 1;
+  transition-property: opacity;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+@media (min-width: 768px) {
+
+  .mobile-delete-btn {
+    opacity: 0;
+  }
+
+  .group:hover .mobile-delete-btn {
+    opacity: 1;
+  }
+}
+.mobile-delete-btn {
+    min-height: 32px;
+    min-width: 32px;
+    padding: 6px;
+  }
+/* Responsive grid for photo galleries */
+.photo-grid {
+  display: grid;
+  gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+}
+@media (min-width: 768px) {
+    .photo-grid {
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
+  }
+@media (min-width: 1024px) {
+    .photo-grid {
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+  }
+/* Mobile-friendly form inputs */
+/* Mobile-friendly buttons */
+/* Mobile-optimized tabs */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -1446,9 +1491,6 @@ video {
 .border-wedding-gold {
   border-color: hsl(var(--wedding-gold));
 }
-.border-wedding-gold\/10 {
-  border-color: hsl(var(--wedding-gold) / 0.1);
-}
 .border-wedding-gold\/20 {
   border-color: hsl(var(--wedding-gold) / 0.2);
 }
@@ -1787,6 +1829,10 @@ video {
 }
 .text-accent-foreground {
   color: hsl(var(--accent-foreground));
+}
+.text-black {
+  --tw-text-opacity: 1;
+  color: rgb(0 0 0 / var(--tw-text-opacity, 1));
 }
 .text-card-foreground {
   color: hsl(var(--card-foreground));
@@ -3129,6 +3175,26 @@ video {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
+  .md\:flex-row {
+    flex-direction: row;
+  }
+
+  .md\:items-center {
+    align-items: center;
+  }
+
+  .md\:space-x-2 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-x-reverse: 0;
+    margin-right: calc(0.5rem * var(--tw-space-x-reverse));
+    margin-left: calc(0.5rem * calc(1 - var(--tw-space-x-reverse)));
+  }
+
+  .md\:space-y-0 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(0px * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(0px * var(--tw-space-y-reverse));
+  }
+
   .md\:text-4xl {
     font-size: 2.25rem;
     line-height: 2.5rem;
@@ -3188,10 +3254,6 @@ video {
 
   .lg\:grid-cols-4 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .lg\:grid-cols-6 {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 
   .lg\:px-8 {
