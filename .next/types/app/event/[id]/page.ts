@@ -1,4 +1,4 @@
-// File: C:\Users\Administrator\Downloads\Hafiportrait\src\app\event\[id]\page.tsx
+// File: /workspace/src/app/event/[id]/page.tsx
 import * as entry from '../../../../../src/app/event/[id]/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
