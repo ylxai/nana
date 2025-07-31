@@ -24,8 +24,10 @@ import {
   ExternalLink,
   FolderOpen,
   Image,
-  Home
+  Home,
+  Crown
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { useToast } from "@/hooks/use-toast";
@@ -46,6 +48,10 @@ export default function AdminDashboard() {
   // States for photo management
   const [selectedPhotoTab, setSelectedPhotoTab] = useState("homepage");
   const [selectedEventForPhotos, setSelectedEventForPhotos] = useState("");
+  
+  // States for official gallery upload
+  const [isOfficialUploadOpen, setIsOfficialUploadOpen] = useState(false);
+  const [officialPhotoDescription, setOfficialPhotoDescription] = useState("");
 
   // Fetch admin stats
   const { data: stats, isLoading: statsLoading } = useQuery({
@@ -98,14 +104,13 @@ export default function AdminDashboard() {
       setIsCreateEventOpen(false);
       toast({
         title: "Event Berhasil Dibuat!",
-        description: "Event baru telah ditambahkan dengan QR code dan link share.",
+        description: "Event baru telah ditambahkan ke sistem.",
       });
     },
-    onError: (error: any) => {
-      console.error('Create event error:', error);
+    onError: () => {
       toast({
         title: "Gagal Membuat Event",
-        description: error?.message || "Silakan coba lagi.",
+        description: "Terjadi kesalahan saat membuat event.",
         variant: "destructive",
       });
     },
@@ -113,24 +118,24 @@ export default function AdminDashboard() {
 
   // Update event mutation
   const updateEventMutation = useMutation({
-    mutationFn: async ({ id, ...eventData }: any) => {
-      const response = await apiRequest("PUT", `/api/admin/events/${id}`, eventData);
+    mutationFn: async (eventData: any) => {
+      const response = await apiRequest("PUT", `/api/events/${eventData.id}`, eventData);
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/events'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
       resetEventForm();
       setEditingEvent(null);
       toast({
-        title: "Event Berhasil Diupdate!",
-        description: "Perubahan telah disimpan.",
+        title: "Event Berhasil Diperbarui!",
+        description: "Event telah diperbarui dengan sukses.",
       });
     },
-    onError: (error: any) => {
-      console.error('Update event error:', error);
+    onError: () => {
       toast({
-        title: "Gagal Update Event",
-        description: error?.message || "Silakan coba lagi.",
+        title: "Gagal Memperbarui Event",
+        description: "Terjadi kesalahan saat memperbarui event.",
         variant: "destructive",
       });
     },
@@ -139,7 +144,7 @@ export default function AdminDashboard() {
   // Delete event mutation
   const deleteEventMutation = useMutation({
     mutationFn: async (eventId: string) => {
-      const response = await apiRequest("DELETE", `/api/admin/events/${eventId}`);
+      const response = await apiRequest("DELETE", `/api/events/${eventId}`);
       return response.json();
     },
     onSuccess: () => {
@@ -147,14 +152,13 @@ export default function AdminDashboard() {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
       toast({
         title: "Event Berhasil Dihapus!",
-        description: "Event dan semua datanya telah dihapus.",
+        description: "Event telah dihapus dari sistem.",
       });
     },
-    onError: (error: any) => {
-      console.error('Delete event error:', error);
+    onError: () => {
       toast({
-        title: "Gagal Hapus Event",
-        description: error?.message || "Silakan coba lagi.",
+        title: "Gagal Menghapus Event",
+        description: "Terjadi kesalahan saat menghapus event.",
         variant: "destructive",
       });
     },
@@ -166,30 +170,50 @@ export default function AdminDashboard() {
       const formData = new FormData();
       formData.append('photo', file);
       formData.append('albumName', 'homepage');
-      
-      const response = await fetch('/api/admin/photos/homepage', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Upload failed');
-      }
+      const response = await apiRequest("POST", "/api/admin/photos/homepage", formData);
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/photos/homepage'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
       toast({
-        title: "Foto Homepage Berhasil Diupload!",
+        title: "Foto Berhasil Diupload!",
         description: "Foto telah ditambahkan ke galeri homepage.",
       });
     },
-    onError: (error: any) => {
-      console.error('Upload homepage photo error:', error);
+    onError: () => {
       toast({
-        title: "Upload Gagal",
-        description: error?.message || "Silakan coba lagi.",
+        title: "Gagal Upload Foto",
+        description: "Terjadi kesalahan saat mengupload foto.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Upload official photo mutation
+  const uploadOfficialPhotoMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('photo', file);
+      formData.append('uploaderName', 'Admin');
+      formData.append('albumName', 'Official');
+      const response = await apiRequest("POST", `/api/events/${selectedEventForPhotos}/photos`, formData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/photos/event', selectedEventForPhotos] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
+      setIsOfficialUploadOpen(false);
+      setOfficialPhotoDescription("");
+      toast({
+        title: "Foto Official Berhasil Diupload!",
+        description: "Foto telah ditambahkan ke galeri official event.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Gagal Upload Foto Official",
+        description: "Terjadi kesalahan saat mengupload foto official.",
         variant: "destructive",
       });
     },
@@ -204,16 +228,16 @@ export default function AdminDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/photos/homepage'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/photos/event', selectedEventForPhotos] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
       toast({
         title: "Foto Berhasil Dihapus!",
-        description: "Foto telah dihapus dari galeri.",
+        description: "Foto telah dihapus dari sistem.",
       });
     },
-    onError: (error: any) => {
-      console.error('Delete photo error:', error);
+    onError: () => {
       toast({
-        title: "Gagal Hapus Foto",
-        description: error?.message || "Silakan coba lagi.",
+        title: "Gagal Menghapus Foto",
+        description: "Terjadi kesalahan saat menghapus foto.",
         variant: "destructive",
       });
     },
@@ -227,28 +251,28 @@ export default function AdminDashboard() {
   };
 
   const handleCreateEvent = () => {
-    if (!eventName.trim() || !eventDate.trim()) {
+    if (!eventName || !eventDate || !eventAccessCode) {
       toast({
-        title: "Informasi Kurang",
-        description: "Mohon isi nama dan tanggal event.",
+        title: "Data Tidak Lengkap",
+        description: "Mohon isi semua field yang diperlukan.",
         variant: "destructive",
       });
       return;
     }
 
     createEventMutation.mutate({
-      name: eventName.trim(),
+      name: eventName,
       date: eventDate,
-      accessCode: eventAccessCode.trim() || "GUEST",
-      isPremium,
+      access_code: eventAccessCode,
+      is_premium: isPremium,
     });
   };
 
   const handleUpdateEvent = () => {
-    if (!editingEvent || !eventName.trim() || !eventDate.trim()) {
+    if (!editingEvent || !eventName || !eventDate || !eventAccessCode) {
       toast({
-        title: "Informasi Kurang",
-        description: "Mohon isi nama dan tanggal event.",
+        title: "Data Tidak Lengkap",
+        description: "Mohon isi semua field yang diperlukan.",
         variant: "destructive",
       });
       return;
@@ -256,10 +280,10 @@ export default function AdminDashboard() {
 
     updateEventMutation.mutate({
       id: editingEvent.id,
-      name: eventName.trim(),
+      name: eventName,
       date: eventDate,
-      accessCode: eventAccessCode.trim() || "GUEST",
-      isPremium,
+      access_code: eventAccessCode,
+      is_premium: isPremium,
     });
   };
 
@@ -285,6 +309,22 @@ export default function AdminDashboard() {
       }
       uploadHomepagePhotoMutation.mutate(file);
     });
+  };
+
+  const handleOfficialPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      const file = files[0];
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File Terlalu Besar",
+          description: "Ukuran file maksimal 10MB.",
+          variant: "destructive",
+        });
+        return;
+      }
+      uploadOfficialPhotoMutation.mutate(file);
+    }
   };
 
   const copyToClipboard = (text: string, type: string) => {
@@ -415,14 +455,15 @@ export default function AdminDashboard() {
                             onChange={(e) => setEventDate(e.target.value)}
                           />
                         </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="accessCode">Kode Akses</Label>
                           <Input
                             id="accessCode"
                             value={eventAccessCode}
-                            onChange={(e) => setEventAccessCode(e.target.value.toUpperCase())}
-                            placeholder="GUEST (default)"
-                            className="uppercase"
+                            onChange={(e) => setEventAccessCode(e.target.value)}
+                            placeholder="Masukkan kode akses"
                           />
                         </div>
                         <div className="flex items-center space-x-2">
@@ -443,12 +484,7 @@ export default function AdminDashboard() {
                           className="bg-wedding-gold hover:bg-wedding-gold/90 text-white"
                         >
                           {createEventMutation.isPending || updateEventMutation.isPending ? (
-                            <>
-                              <LoadingSpinner />
-                              <span className="ml-2">
-                                {editingEvent ? "Updating..." : "Creating..."}
-                              </span>
-                            </>
+                            <LoadingSpinner />
                           ) : (
                             editingEvent ? "Update Event" : "Buat Event"
                           )}
@@ -471,28 +507,23 @@ export default function AdminDashboard() {
                 {/* Events List */}
                 <div className="space-y-4">
                   {events.map((event: Event) => (
-                    <Card key={event.id} className="border-wedding-gold/10">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
+                    <Card key={event.id} className="border-wedding-gold/20">
+                      <CardContent className="p-6">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0">
                           <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-2">
-                              <h3 className="font-semibold text-lg">{event.name}</h3>
+                              <h3 className="text-lg font-semibold">{event.name}</h3>
                               {event.is_premium && (
-                                <span className="px-2 py-1 text-xs bg-wedding-gold text-white rounded">
+                                <Badge className="bg-wedding-gold text-white">
                                   Premium
-                                </span>
+                                </Badge>
                               )}
                             </div>
-                            <p className="text-sm text-gray-600 mb-2">
-                              📅 {new Date(event.date).toLocaleDateString('id-ID', {
-                                weekday: 'long',
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                              })}
+                            <p className="text-sm text-muted-foreground mb-2">
+                              Tanggal: {new Date(event.date).toLocaleDateString('id-ID')}
                             </p>
-                            <p className="text-sm text-gray-600 mb-3">
-                              🔑 Kode Akses: <span className="font-mono bg-gray-100 px-2 py-1 rounded">{event.access_code}</span>
+                            <p className="text-sm text-muted-foreground mb-3">
+                              Kode Akses: <code className="bg-gray-100 px-2 py-1 rounded">{event.access_code}</code>
                             </p>
                             <div className="flex flex-wrap gap-2">
                               <Button
@@ -608,7 +639,7 @@ export default function AdminDashboard() {
                         <LoadingSpinner />
                       </div>
                     ) : homepagePhotos.length > 0 ? (
-                      <div className="grid md:grid-cols-4 lg:grid-cols-6 gap-4">
+                      <div className="photo-grid">
                         {homepagePhotos.map((photo: Photo) => (
                           <div key={photo.id} className="relative group">
                             <img
@@ -620,7 +651,7 @@ export default function AdminDashboard() {
                               <Button
                                 size="sm"
                                 variant="destructive"
-                                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="mobile-delete-btn"
                                 onClick={() => {
                                   if (confirm('Yakin ingin menghapus foto ini?')) {
                                     deletePhotoMutation.mutate(photo.id);
@@ -643,21 +674,77 @@ export default function AdminDashboard() {
 
                   {/* Event Photos */}
                   <TabsContent value="events" className="space-y-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0">
                       <h3 className="text-lg font-semibold">Foto Galeri Event</h3>
-                      <select
-                        value={selectedEventForPhotos}
-                        onChange={(e) => setSelectedEventForPhotos(e.target.value)}
-                        className="px-3 py-2 border rounded-md"
-                      >
-                        <option value="">Pilih Event</option>
-                        {events.map((event: Event) => (
-                          <option key={event.id} value={event.id}>
-                            {event.name}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2">
+                        <select
+                          value={selectedEventForPhotos}
+                          onChange={(e) => setSelectedEventForPhotos(e.target.value)}
+                          className="px-3 py-2 border rounded-md"
+                        >
+                          <option value="">Pilih Event</option>
+                          {events.map((event: Event) => (
+                            <option key={event.id} value={event.id}>
+                              {event.name}
+                            </option>
+                          ))}
+                        </select>
+                        {selectedEventForPhotos && (
+                          <Button
+                            onClick={() => setIsOfficialUploadOpen(true)}
+                            className="bg-wedding-gold hover:bg-wedding-gold/90 text-white"
+                          >
+                            <Crown className="w-4 h-4 mr-2" />
+                            Upload Foto Official
+                          </Button>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Official Photo Upload Modal */}
+                    {isOfficialUploadOpen && selectedEventForPhotos && (
+                      <Card className="mb-6 border-wedding-gold/20">
+                        <CardHeader>
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <Crown className="w-5 h-5 text-wedding-gold" />
+                            Upload Foto Official
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div>
+                            <Label htmlFor="officialPhoto">Pilih Foto</Label>
+                            <Input
+                              id="officialPhoto"
+                              type="file"
+                              accept="image/*"
+                              onChange={handleOfficialPhotoUpload}
+                              className="mt-1"
+                            />
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Ukuran maksimal 10MB. Format: JPG, PNG, GIF
+                            </p>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button
+                              onClick={() => {
+                                setIsOfficialUploadOpen(false);
+                                setOfficialPhotoDescription("");
+                              }}
+                              variant="outline"
+                            >
+                              Batal
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {uploadOfficialPhotoMutation.isPending && (
+                      <div className="flex items-center justify-center py-4">
+                        <LoadingSpinner />
+                        <span className="ml-2 text-sm text-gray-600">Mengupload foto official...</span>
+                      </div>
+                    )}
 
                     {selectedEventForPhotos ? (
                       eventPhotosLoading ? (
@@ -673,10 +760,11 @@ export default function AdminDashboard() {
                             
                             return (
                               <div key={albumName} className="mb-8">
-                                <h4 className="text-md font-semibold mb-4 text-wedding-gold">
+                                <h4 className="text-md font-semibold mb-4 text-wedding-gold flex items-center gap-2">
+                                  {albumName === "Official" && <Crown className="w-4 h-4" />}
                                   Album {albumName} ({albumPhotos.length} foto)
                                 </h4>
-                                <div className="grid md:grid-cols-4 lg:grid-cols-6 gap-4">
+                                <div className="photo-grid">
                                   {albumPhotos.map((photo: Photo) => (
                                     <div key={photo.id} className="relative group">
                                       <img
@@ -689,6 +777,7 @@ export default function AdminDashboard() {
                                           <Button
                                             size="sm"
                                             variant="destructive"
+                                            className="mobile-delete-btn"
                                             onClick={() => {
                                               if (confirm('Yakin ingin menghapus foto ini?')) {
                                                 deletePhotoMutation.mutate(photo.id);
@@ -697,8 +786,6 @@ export default function AdminDashboard() {
                                           >
                                             <Trash className="w-3 h-3" />
                                           </Button>
-                                        </div>
-                                      </div>
                                       <div className="absolute bottom-1 left-1 right-1 text-xs text-white bg-black/50 rounded px-1 py-0.5 truncate">
                                         {photo.uploader_name || 'Anonim'}
                                       </div>

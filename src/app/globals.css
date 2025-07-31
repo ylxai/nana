@@ -70,4 +70,60 @@
       "Noto Sans",
       sans-serif;
   }
+}
+
+@layer components {
+  /* Mobile-friendly touch targets */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Mobile-optimized delete button */
+  .mobile-delete-btn {
+    @apply absolute top-2 right-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity;
+    min-height: 32px;
+    min-width: 32px;
+    padding: 6px;
+  }
+  
+  /* Responsive grid for photo galleries */
+  .photo-grid {
+    @apply grid gap-4;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+  
+  @media (min-width: 768px) {
+    .photo-grid {
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .photo-grid {
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+  }
+  
+  /* Mobile-friendly form inputs */
+  .mobile-input {
+    @apply text-base;
+    min-height: 44px;
+  }
+  
+  /* Mobile-friendly buttons */
+  .mobile-button {
+    @apply touch-target;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  /* Mobile-optimized tabs */
+  .mobile-tabs {
+    @apply flex flex-wrap gap-2;
+  }
+  
+  .mobile-tab {
+    @apply flex-1 min-w-0 text-center;
+    min-height: 44px;
+  }
 } 
