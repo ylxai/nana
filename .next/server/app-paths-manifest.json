@@ -1,8 +1,19 @@
 {
-  "/not-found": "app/not-found.js",
-  "/event/[id]/page": "app/event/[id]/page.js",
-  "/admin/page": "app/admin/page.js",
-  "/api/events/[id]/photos/route": "app/api/events/[id]/photos/route.js",
+  "/_not-found": "app/_not-found.js",
+  "/api/admin/events/[id]/route": "app/api/admin/events/[id]/route.js",
+  "/api/admin/events/route": "app/api/admin/events/route.js",
   "/api/admin/photos/[photoId]/route": "app/api/admin/photos/[photoId]/route.js",
-  "/api/admin/photos/homepage/route": "app/api/admin/photos/homepage/route.js"
+  "/api/admin/photos/homepage/route": "app/api/admin/photos/homepage/route.js",
+  "/api/admin/stats/route": "app/api/admin/stats/route.js",
+  "/api/events/[id]/messages/route": "app/api/events/[id]/messages/route.js",
+  "/api/events/[id]/route": "app/api/events/[id]/route.js",
+  "/api/events/[id]/verify-code/route": "app/api/events/[id]/verify-code/route.js",
+  "/api/events/[id]/photos/route": "app/api/events/[id]/photos/route.js",
+  "/api/events/route": "app/api/events/route.js",
+  "/api/messages/[messageId]/hearts/route": "app/api/messages/[messageId]/hearts/route.js",
+  "/api/test/db/route": "app/api/test/db/route.js",
+  "/api/photos/[photoId]/likes/route": "app/api/photos/[photoId]/likes/route.js",
+  "/api/test/supabase/route": "app/api/test/supabase/route.js",
+  "/page": "app/page.js",
+  "/event/[id]/page": "app/event/[id]/page.js"
 }

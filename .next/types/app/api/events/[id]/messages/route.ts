@@ -1,4 +1,4 @@
-// File: C:\Users\Administrator\Downloads\Hafiportrait\src\app\api\events\[id]\messages\route.ts
+// File: /workspace/src/app/api/events/[id]/messages/route.ts
 import * as entry from '../../../../../../../src/app/api/events/[id]/messages/route.js'
 import type { NextRequest } from 'next/server.js'
 
