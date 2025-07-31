@@ -201,7 +201,7 @@ export default function PhotoLightbox({ photos, currentIndex, onClose, eventId }
             <div className="bg-black/50 rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="text-white">
-                  <p className="font-medium">{currentPhoto.originalName}</p>
+                  
                   <p className="text-sm text-gray-300">
                     Diunggah oleh: {currentPhoto.uploaderName || "Anonim"}
                   </p>
