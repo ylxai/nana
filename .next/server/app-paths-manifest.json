@@ -1,0 +1,8 @@
+{
+  "/not-found": "app/not-found.js",
+  "/event/[id]/page": "app/event/[id]/page.js",
+  "/admin/page": "app/admin/page.js",
+  "/api/events/[id]/photos/route": "app/api/events/[id]/photos/route.js",
+  "/api/admin/photos/[photoId]/route": "app/api/admin/photos/[photoId]/route.js",
+  "/api/admin/photos/homepage/route": "app/api/admin/photos/homepage/route.js"
+}

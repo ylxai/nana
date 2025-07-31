@@ -1,9 +1,10 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   darkMode: ["class"],
   content: [
-    "./client/src/**/*.{ts,tsx}",
-    "./client/index.html",
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   prefix: "",
   theme: {
@@ -49,6 +50,11 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Wedding theme colors
+        'wedding-ivory': 'hsl(var(--wedding-ivory))',
+        'wedding-gold': 'hsl(var(--wedding-gold))',
+        'wedding-rose': 'hsl(var(--wedding-rose))',
+        'wedding-sage': 'hsl(var(--wedding-sage))',
       },
       borderRadius: {
         lg: "var(--radius)",
