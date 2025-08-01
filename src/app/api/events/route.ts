@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { database } from '@/lib/database';
+import { database } from '@/lib/database'; // Mengimpor database langsung
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const event = await database.createEvent({
+    const event = await database.createEvent({ // Menggunakan database langsung
       name: body.name,
       date: body.date,
       access_code: body.accessCode || body.access_code,

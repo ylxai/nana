@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState } from "react"; 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,9 @@ import {
   FolderOpen,
   Image,
   Home,
+  X,
+  ChevronLeft,
+  ChevronRight,
   Crown
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -35,7 +38,7 @@ import type { Event, Photo } from "@/lib/database";
 import StatsCards from "@/components/admin/StatsCards";
 import EventForm, { type EventFormData } from "@/components/admin/EventForm";
 import EventList from "@/components/admin/EventList";
-
+import PhotoLightbox from "@/components/photo-lightbox";
 
 export default function AdminDashboard() {
   const { toast } = useToast();
@@ -49,7 +52,10 @@ export default function AdminDashboard() {
   const [eventAccessCode, setEventAccessCode] = useState("");
   const [isPremium, setIsPremium] = useState(false);
   const [isEventFormOpen, setIsEventFormOpen] = useState(false);
-  
+  const [isHomepageUploadOpen, setIsHomepageUploadOpen] = useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
+  const [currentPhoto, setCurrentPhoto] = useState<Photo | null>(null); 
   // States for photo management
   const [selectedPhotoTab, setSelectedPhotoTab] = useState("homepage");
   const [selectedEventForPhotos, setSelectedEventForPhotos] = useState("");
@@ -462,31 +468,64 @@ export default function AdminDashboard() {
 
                   {/* Homepage Photos */}
                   <TabsContent value="homepage" className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold">Foto Galeri Homepage</h3>
-                      <div className="flex items-center space-x-2">
-                        <label className="cursor-pointer">
-                          <Button className="bg-wedding-gold hover:bg-wedding-gold/90 text-white">
-                            <Upload className="text-black w-4 h-4 mr-2" />
-                            Upload Foto
-                          </Button>
-                          <input
-                            type="file"
-                            multiple
-                            accept="image/*"
-                            onChange={handleHomepagePhotoUpload}
-                            className="hidden"
-                          />
-                        </label>
-                      </div>
-                    </div>
-                    
-                    {uploadHomepagePhotoMutation.isPending && (
-                      <div className="flex items-center justify-center py-4">
-                        <LoadingSpinner />
-                        <span className="ml-2 text-sm text-gray-600">Mengupload foto...</span>
-                      </div>
-                    )}
+  <div className="flex items-center justify-between">
+    <h3 className="text-lg font-semibold">Foto Galeri Homepage</h3>
+    
+    {/* 1. Tombol ini SEKARANG HANYA untuk membuka modal */}
+    <Button 
+      onClick={() => setIsHomepageUploadOpen(true)} 
+      className="bg-wedding-gold hover:bg-wedding-gold/90 text-wedding-black"
+    >
+      <Upload className="w-4 h-4 mr-2" />
+      Upload Foto
+    </Button>
+  </div>
+
+  {/* 2. Modal Upload, hanya muncul jika isHomepageUploadOpen adalah true */}
+  {isHomepageUploadOpen && (
+    <Card className="mb-6 border-wedding-gold/20">
+      <CardHeader>
+        <CardTitle className="text-lg flex items-center gap-2">
+          {/* Anda mungkin perlu mengimpor 'Crown' dari lucide-react jika belum */}
+          <Upload className="w-5 h-5 text-wedding-gold" />
+          Upload Foto Homepage
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+          <Label htmlFor="homepage-photo-input">Pilih Foto</Label>
+          <Input
+            id="homepage-photo-input"
+            type="file"
+            multiple // Tambahkan 'multiple' jika ingin bisa memilih banyak file
+            accept="image/*"
+            onChange={handleHomepagePhotoUpload} // Handler upload ada di sini
+            className="mt-1"
+          />
+          <p className="text-sm text-muted-foreground mt-1">
+            Ukuran maksimal 10MB.
+          </p>
+        </div>
+        <div className="flex space-x-2">
+          {/* 3. Tombol Batal SEKARANG berfungsi dengan benar */}
+          <Button
+            onClick={() => setIsHomepageUploadOpen(false)}
+            variant="outline"
+          >
+            Batal
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )}
+  
+  {/* Indikator Loading */}
+  {uploadHomepagePhotoMutation.isPending && (
+    <div className="flex items-center justify-center py-4">
+      <LoadingSpinner />
+      <span className="ml-2 text-sm text-gray-600">Mengupload foto...</span>
+    </div>
+  )}
                     
                     {homepagePhotosLoading ? (
                       <div className="text-center py-8">
@@ -494,8 +533,12 @@ export default function AdminDashboard() {
                       </div>
                     ) : homepagePhotos.length > 0 ? (
                       <div className="photo-grid">
-                        {homepagePhotos.map((photo: Photo) => (
-                          <div key={photo.id} className="relative group">
+                        {homepagePhotos.map((photo: Photo, index: number) => (
+                          <div key={photo.id} className="relative group cursor-pointer"
+                          onClick={() => {
+                            setSelectedPhotoIndex(index);
+                            setIsLightboxOpen(true);
+                          }}>
                             <img
                               src={photo.url}
                               alt={photo.original_name}
@@ -505,8 +548,9 @@ export default function AdminDashboard() {
                               <Button
                                 size="sm"
                                 variant="destructive"
-                                className="mobile-delete-btn"
-                                onClick={() => {
+                                className="mobile-delete-btn opacity-0 group-hover:opacity-100"
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   if (confirm('Yakin ingin menghapus foto ini?')) {
                                     deletePhotoMutation.mutate(photo.id);
                                   }
@@ -546,7 +590,7 @@ export default function AdminDashboard() {
                         {selectedEventForPhotos && (
                           <Button
                             onClick={() => setIsOfficialUploadOpen(true)}
-                            className="bg-wedding-gold hover:bg-wedding-gold/90 text-white"
+                            className="bg-wedding-gold hover:bg-wedding-gold/90 text-wedding-black"
                           >
                             <Crown className="text-black w-4 h-4 mr-2" />
                             Upload Foto Official
@@ -608,7 +652,7 @@ export default function AdminDashboard() {
                       ) : eventPhotos.length > 0 ? (
                         <div>
                           {/* Group photos by album */}
-                          {["Official", "Private", "Tamu", "Bridesmaid"].map(albumName => { 
+                          {["Official", "Tamu", "Bridesmaid"].map(albumName => { 
                             const albumPhotos = eventPhotos.filter((photo: Photo) => photo.album_name === albumName);
                             if (albumPhotos.length === 0) return null;
                             
@@ -619,8 +663,12 @@ export default function AdminDashboard() {
                                   Album {albumName} ({albumPhotos.length} foto)
                                 </h4>
                                 <div className="photo-grid">
-                                  {albumPhotos.map((photo: Photo) => (
-                                    <div key={photo.id} className="relative group">
+                                    {albumPhotos.map((photo: Photo, index: number) => (
+                                    <div key={photo.id} className="relative group cursor-pointer"
+                                    onClick={() => {
+                                      setSelectedPhotoIndex(index);
+                                      setIsLightboxOpen(true);
+                                    }}>
                                       <img
                                         src={photo.url}
                                         alt={photo.original_name}
@@ -628,18 +676,7 @@ export default function AdminDashboard() {
                                       />
                                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all rounded-lg flex items-center justify-center">
                                         <div className="opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
-                                          <Button
-                                            size="sm"
-                                            variant="destructive"
-                                            className="mobile-delete-btn"
-                                            onClick={() => {
-                                              if (confirm('Yakin ingin menghapus foto ini?')) {
-                                                deletePhotoMutation.mutate(photo.id);
-                                              }
-                                            }}
-                                          >
-                                            <Trash className="w-3 h-3" />
-                                          </Button>
+                                         
                                         </div>
                                         <div className="absolute bottom-1 left-1 right-1 text-xs text-white bg-black/50 rounded px-1 py-0.5 truncate">
                                           {photo.uploader_name || 'Anonim'}
@@ -692,6 +729,31 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
+        {isLightboxOpen && selectedPhotoIndex !== null && (
+          <PhotoLightbox
+          photos={selectedPhotoTab === "homepage" ? homepagePhotos : eventPhotos}
+          currentIndex={selectedPhotoIndex}
+          onClose={() => setIsLightboxOpen(false)}
+          onDelete={(photoId) => {
+            if (confirm('Yakin ingin menghapus foto ini secara permanen?')) {
+              deletePhotoMutation.mutate(photoId, {
+                onSuccess: () => {
+                  // Tutup lightbox setelah berhasil menghapus
+                  setIsLightboxOpen(false); 
+                },
+              });
+            }
+          }}
+          onLike={(photoId) => {
+            // Like functionality not implemented in admin panel
+            console.log('Like photo:', photoId);
+          }}
+          onUnlike={(photoId) => {
+            // Unlike functionality not implemented in admin panel
+            console.log('Unlike photo:', photoId);
+          }}
+        />
+        )}
       </div>
     </div>
   );

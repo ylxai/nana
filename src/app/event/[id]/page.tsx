@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +27,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Event, Photo, Message } from "@/lib/database";
 import LoadingSpinner from "@/components/ui/loading-spinner";
+import PhotoLightbox from "@/components/photo-lightbox";
 
 export default function EventPage() {
   const params = useParams();
@@ -39,7 +40,8 @@ export default function EventPage() {
   const [selectedAlbum, setSelectedAlbum] = useState("Official");
   const [guestName, setGuestName] = useState("");
   const [messageText, setMessageText] = useState("");
-  const [lightboxPhoto, setLightboxPhoto] = useState<number | null>(null);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
 
   // Fetch event details
   const { data: event, isLoading: eventLoading } = useQuery({
@@ -92,7 +94,9 @@ export default function EventPage() {
       });
     },
   });
-
+  const albumPhotos = useMemo(() => {
+    return photos.filter(p => p.album_name === selectedAlbum);
+  }, [photos, selectedAlbum]);
   // Photo upload mutation
   const uploadPhotoMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -151,7 +155,7 @@ export default function EventPage() {
       });
     },
   });
-
+  
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     files.forEach(file => {
@@ -210,17 +214,25 @@ export default function EventPage() {
     );
   }
 
+  
+  // 4. Handler untuk membuka lightbox dengan logika yang benar
+  const handlePhotoClick = (photoIndexInAlbum: number) => {
+    setSelectedPhotoIndex(photoIndexInAlbum);
+    setIsLightboxOpen(true);
+  };
+  
+
   const needsAccessCode = (selectedAlbum === "Tamu" || selectedAlbum === "Bridesmaid") && !isCodeVerified;
 
   return (
     <div className="min-h-screen bg-wedding-ivory">
       {/* Header */}
-      <header className="bg-white/90 backdrop-blur-sm border-b border-wedding-gold/20 p-4">
+      <header className="bg-white/90 backdrop-blur-sm border-b border-wedding-gold/20 p-2">
         <div className="container mx-auto">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">{event.name}</h1>
-              <p className="text-gray-600">
+              <h1 className="text-3xl font-bold text-gray-800">{event.name}</h1>
+              <p className="text-gray-600 text-sm">
                 {new Date(event.date).toLocaleDateString('id-ID', { 
                   weekday: 'long', 
                   year: 'numeric', 
@@ -235,29 +247,27 @@ export default function EventPage() {
                 size="sm"
                 onClick={() => copyToClipboard(event.shareable_link)}
               >
-                <Share2 className="h-4 w-4 mr-2" />
-                Bagikan
+                <Share2 className="h-4 w-4" /> 
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => window.open(event.qr_code, '_blank')}
               >
-                <QrCode className="h-4 w-4 mr-2" />
-                QR Code
+                <QrCode className="h-4 w-4" />
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-4">
         {/* Access Code Section for Tamu and Bridesmaid */}
         {needsAccessCode && (
-          <Card className="mb-8 max-w-md mx-auto">
+          <Card className="mb-4 max-w-md mx-auto">
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <Lock className="h-5 w-5 mr-2" />
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" />
                 Masukkan Kode Akses
               </CardTitle>
             </CardHeader>
@@ -287,7 +297,7 @@ export default function EventPage() {
 
         {/* Main Tabs */}
         <Tabs value={selectedAlbum} onValueChange={setSelectedAlbum} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-4">
 
             <TabsTrigger value="Official">Official</TabsTrigger>
             <TabsTrigger value="Tamu">Tamu</TabsTrigger>
@@ -295,217 +305,102 @@ export default function EventPage() {
             <TabsTrigger value="Guestbook">Guestbook</TabsTrigger>
           </TabsList>
 
-          {/* Official Photos Tab */}
-          <TabsContent value="Official" className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2">Foto Official</h2>
-              <p className="text-gray-600 mb-6">Foto resmi dari fotografer acara</p>
-            </div>
+          {/* Ganti ketiga TabsContent Anda dengan blok ini */}
 
-            {photosLoading ? (
-              <div className="text-center py-8">
-                <LoadingSpinner />
-              </div>
-            ) : photos.filter(photo => photo.album_name === "Official").length > 0 ? (
-              <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {photos.filter(photo => photo.album_name === "Official").map((photo, index) => (
-                  <div 
-                    key={photo.id} 
-                    className="relative group cursor-pointer"
-                    onClick={() => setLightboxPhoto(index)}
-                  >
-                    <img
-                      src={photo.url}
-                      alt={photo.original_name}
-                      className="w-full h-48 object-cover rounded-lg"
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all rounded-lg flex items-center justify-center">
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="secondary" size="sm">
-                          Lihat
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 text-gray-500">
-                <Camera className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>Belum ada foto official yang diupload.</p>
-              </div>
-            )}
-          </TabsContent>
+  <TabsContent key={selectedAlbum} value={selectedAlbum} className="space-y-6">
+    <div className="text-center">
+      <h2 className="text-2xl font-bold mb-2">Foto {selectedAlbum}</h2>
+      <p className="text-gray-600 mb-6">
+        {/* Deskripsi bisa dibuat dinamis jika perlu */}
+        {selectedAlbum === "Official" && "Foto resmi dari fotografer acara"}
+        {selectedAlbum === "Tamu" && "Upload dan lihat foto dari para tamu"}
+        {selectedAlbum === "Bridesmaid" && "Album khusus untuk para bridesmaid"}
+      </p>
+    </div>
 
-          
-
-          {/* Guest Photos Tab */}
-          <TabsContent value="Tamu" className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2">Foto Tamu</h2>
-              <p className="text-gray-600 mb-6">Upload dan lihat foto dari para tamu</p>
-            </div>
-
-            {/* Upload Section */}
-            {(isCodeVerified || selectedAlbum === "Official") && (
-              <Card className="p-4 sm:p-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-center w-full">
-                    <label className="upload-area flex flex-col items-center justify-center w-full h-32 sm:h-40 cursor-pointer touch-manipulation">
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4 text-center">
-                        <Upload className="w-6 h-6 sm:w-8 sm:h-8 mb-3 text-wedding-rose" />
-                        <p className="mb-2 text-sm sm:text-base text-gray-500">
-                          <span className="font-semibold">Ketuk untuk upload foto</span>
-                        </p>
-                        <p className="text-xs sm:text-sm text-gray-500">PNG, JPG, atau GIF (maks. 10MB per file)</p>
-                      </div>
-                      <input
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        capture="environment"
-                        onChange={handleFileUpload}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
-                  <Input
-                    type="text"
-                    placeholder="Nama Anda (opsional)"
-                    value={uploaderName}
-                    onChange={(e) => setUploaderName(e.target.value)}
-                    className="text-base"
-                  />
-                  {uploadPhotoMutation.isPending && (
-                    <div className="flex items-center justify-center py-2">
-                      <LoadingSpinner />
-                      <span className="ml-2 text-sm text-gray-600">Mengupload foto...</span>
-                    </div>
-                  )}
+    {/* Tampilkan form upload HANYA jika albumnya "Tamu" atau "Bridesmaid" */}
+    {(selectedAlbum === "Tamu" || selectedAlbum === "Bridesmaid") && !needsAccessCode && (
+      <Card className="p-4 sm:p-6">
+        <div className="space-y-4">
+    <div className="flex items-center justify-center w-full">
+      <label className="flex flex-col items-center justify-center w-full h-32 cursor-pointer rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100">
+        <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
+          <Upload 
+            className={`w-8 h-8 mb-3 ${
+              selectedAlbum === 'Tamu' ? 'text-wedding-rose' : 'text-wedding-sage'
+            }`} 
+          />
+          <p className="mb-2 text-sm text-gray-500">
+            <span className="font-semibold">Ketuk untuk upload foto</span>
+          </p>
+          <p className="text-xs text-gray-500">PNG, JPG, GIF (maks. 10MB)</p>
+        </div>
+        <input
+          type="file"
+          multiple
+          accept="image/*"
+          capture="environment"
+          onChange={handleFileUpload}
+          className="hidden"
+        />
+      </label>
+    </div>
+    <Input
+      type="text"
+      placeholder="Nama Anda (opsional)"
+      value={uploaderName}
+      onChange={(e) => setUploaderName(e.target.value)}
+      className="text-base"
+    />
+    {uploadPhotoMutation.isPending && (
+      <div className="flex items-center justify-center py-2">
+        <LoadingSpinner />
+        <span className="ml-2 text-sm text-gray-600">Mengupload foto...</span>
+      </div>
+    )}
+  </div>
+      </Card>
+    )}
+    
+    {/* Logika untuk menampilkan galeri foto */}
+    {photosLoading ? (
+      <div className="text-center py-8"><LoadingSpinner /></div>
+    ) : // Cek apakah album yang sedang di-render sama dengan album yang dipilih
+      // dan apakah ada foto di dalamnya
+      albumPhotos.length > 0 ? (
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {albumPhotos.map((photo, index) => (
+          <div 
+            key={photo.id} 
+            className="relative group cursor-pointer"
+            onClick={() => handlePhotoClick(index)}
+          >
+            <img
+              src={photo.url}
+              alt={photo.original_name}
+              className="w-full h-48 object-cover rounded-lg"
+            />
+            {/* Overlay saat hover */}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all rounded-lg flex items-center justify-center">
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity text-white">
+                <div className="flex items-center space-x-2">
+                  <Heart className="h-4 w-4" />
+                  <span>{photo.likes || 0}</span>
                 </div>
-              </Card>
-            )}
-
-            {/* Photos Grid */}
-            {photosLoading ? (
-              <div className="text-center py-8">
-                <LoadingSpinner />
               </div>
-            ) : photos.filter(photo => photo.album_name === "Tamu").length > 0 ? (
-              <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {photos.filter(photo => photo.album_name === "Tamu").map((photo, index) => (
-                  <div 
-                    key={photo.id} 
-                    className="relative group cursor-pointer"
-                    onClick={() => setLightboxPhoto(index)}
-                  >
-                    <img
-                      src={photo.url}
-                      alt={photo.original_name}
-                      className="w-full h-48 object-cover rounded-lg"
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all rounded-lg flex items-center justify-center">
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity text-white">
-                        <div className="flex items-center space-x-2">
-                          <Heart className="h-4 w-4" />
-                          <span>{photo.likes || 0}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 text-gray-500">
-                <Camera className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>Belum ada foto yang diupload. Jadilah yang pertama!</p>
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Bridesmaid Photos Tab */}
-          <TabsContent value="Bridesmaid" className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2">Foto Bridesmaid</h2>
-              <p className="text-gray-600 mb-6">Album khusus untuk para bridesmaid</p>
             </div>
+          </div>
+        ))}
+      </div>
+    ) : (
+      // Tampilan jika tidak ada foto
+      <div className="text-center py-12 text-gray-500">
+        <Camera className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+        <p>Belum ada foto di album {selectedAlbum}.</p>
+      </div>
+    )}
+  </TabsContent>
 
-            {/* Upload Section */}
-            {(isCodeVerified || selectedAlbum === "Official") && (
-              <Card className="p-4 sm:p-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-center w-full">
-                    <label className="upload-area flex flex-col items-center justify-center w-full h-32 sm:h-40 cursor-pointer touch-manipulation">
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4 text-center">
-                        <Upload className="w-6 h-6 sm:w-8 sm:h-8 mb-3 text-wedding-sage" />
-                        <p className="mb-2 text-sm sm:text-base text-gray-500">
-                          <span className="font-semibold">Ketuk untuk upload foto</span>
-                        </p>
-                        <p className="text-xs sm:text-sm text-gray-500">PNG, JPG, atau GIF (maks. 10MB per file)</p>
-                      </div>
-                      <input
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        capture="environment"
-                        onChange={handleFileUpload}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
-                  <Input
-                    type="text"
-                    placeholder="Nama Anda (opsional)"
-                    value={uploaderName}
-                    onChange={(e) => setUploaderName(e.target.value)}
-                    className="text-base"
-                  />
-                  {uploadPhotoMutation.isPending && (
-                    <div className="flex items-center justify-center py-2">
-                      <LoadingSpinner />
-                      <span className="ml-2 text-sm text-gray-600">Mengupload foto...</span>
-                    </div>
-                  )}
-                </div>
-              </Card>
-            )}
-
-            {/* Photos Grid */}
-            {photosLoading ? (
-              <div className="text-center py-8">
-                <LoadingSpinner />
-              </div>
-            ) : photos.filter(photo => photo.album_name === "Bridesmaid").length > 0 ? (
-              <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {photos.filter(photo => photo.album_name === "Bridesmaid").map((photo, index) => (
-                  <div 
-                    key={photo.id} 
-                    className="relative group cursor-pointer"
-                    onClick={() => setLightboxPhoto(index)}
-                  >
-                    <img
-                      src={photo.url}
-                      alt={photo.original_name}
-                      className="w-full h-48 object-cover rounded-lg"
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all rounded-lg flex items-center justify-center">
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity text-white">
-                        <div className="flex items-center space-x-2">
-                          <Heart className="h-4 w-4" />
-                          <span>{photo.likes || 0}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 text-gray-500">
-                <Camera className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>Belum ada foto bridesmaid yang diupload.</p>
-              </div>
-            )}
-          </TabsContent>
 
           {/* Guestbook Tab */}
           <TabsContent value="Guestbook" className="space-y-6">
@@ -532,9 +427,9 @@ export default function EventPage() {
                 <Button
                   onClick={handleSubmitMessage}
                   disabled={addMessageMutation.isPending}
-                  className="w-full bg-wedding-gold text-white hover:bg-wedding-gold/90"
+                  className="w-full bg-wedding-gold text-black hover:bg-wedding-gold/90"
                 >
-                  <MessageSquare className="h-4 w-4 mr-2" />
+                  <MessageSquare className="h-4 w-4" />
                   {addMessageMutation.isPending ? "Mengirim..." : "Kirim Pesan"}
                 </Button>
               </div>
@@ -583,6 +478,16 @@ export default function EventPage() {
             )}
           </TabsContent>
         </Tabs>
+        {isLightboxOpen && selectedPhotoIndex !== null && (
+          <PhotoLightbox
+            photos={albumPhotos} 
+            currentIndex={selectedPhotoIndex}
+            onClose={() => setIsLightboxOpen(false)}
+            onDelete={() => { /* Implementasi Hapus */ }}
+            onLike={() => { /* Implementasi Suka */ }}
+            onUnlike={() => { /* Implementasi Batal Suka */ }}
+          />
+        )}
       </div>
     </div>
   );

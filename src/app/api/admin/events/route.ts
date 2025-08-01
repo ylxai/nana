@@ -7,9 +7,17 @@ export async function GET() {
     return NextResponse.json(events);
   } catch (error: any) {
     console.error('Get admin events error:', error);
-    return NextResponse.json(
-      { message: "Failed to fetch events", error: error.message },
-      { status: 400 }
-    );
+    return NextResponse.json({ message: 'Failed to load admin events' }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const eventData = await request.json();
+    const newEvent = await database.createEvent(eventData);
+    return NextResponse.json(newEvent, { status: 201 });
+  } catch (error: any) {
+    console.error('Create event error:', error);
+    return NextResponse.json({ message: `Failed to create event: ${error.message}` }, { status: 500 });
   }
 }

@@ -17,7 +17,6 @@ export async function PATCH(
       );
     }
 
-    // Update message hearts
     await database.updateMessageHearts(messageId, hearts);
 
     return NextResponse.json({ 

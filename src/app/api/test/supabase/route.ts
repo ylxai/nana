@@ -3,17 +3,14 @@ import { supabaseAdmin, STORAGE_BUCKET } from '@/lib/supabase';
 
 export async function GET() {
   try {
-    // Test Supabase connection
     const { data: buckets, error: bucketsError } = await supabaseAdmin.storage.listBuckets();
     
     if (bucketsError) {
       throw new Error(`Bucket list error: ${bucketsError.message}`);
     }
 
-    // Check if our bucket exists
     const bucketExists = buckets?.some(bucket => bucket.name === STORAGE_BUCKET);
     
-    // Try to list files in bucket (will fail if bucket doesn't exist)
     const { data: files, error: filesError } = await supabaseAdmin.storage
       .from(STORAGE_BUCKET)
       .list('', { limit: 1 });

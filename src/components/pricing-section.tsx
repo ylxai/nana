@@ -5,37 +5,96 @@ import { Check } from "lucide-react";
 export default function PricingSection() {
   const plans = [
     {
-      name: "Basic",
-      price: "299K",
+      name: "Paket Akad Nikah",
+      price: "1.300.000",
       features: [
-        "Upload foto unlimited",
-        "Gallery online",
-        "Link sharing",
-        "Support 24/7"
+        "1 fotografer",
+        "1 hari kerja",
+        "40 cetak foto 5R (pilihan)",
+        "Album magnetik (tempel)",
+        "File foto tanpa batas",
+        "Softcopy di flashdisk"
       ]
     },
     {
-      name: "Premium",
-      price: "599K",
+      name: "Paket Resepsi",
+      price: "1.800.000",
       features: [
-        "Semua fitur Basic",
-        "Custom branding",
-        "Download ZIP",
-        "Analytics dashboard",
-        "Priority support"
+        "1 fotografer & 1 asisten fotografer",
+        "1 hari kerja",
+        "40 cetak foto 5R (pilihan)",
+        "Album magnetik (tempel)",
+        "File foto tanpa batas",
+        "Softcopy di flashdisk",
+        "1 cetak besar 14R + frame"
+      ]
+    },
+    {
+      name: "Paket Akad Nikah", // Paket Akad Nikah kedua
+      price: "2.000.000",
+      features: [
+        "1 fotografer & 1 asisten fotografer",
+        "1 hari kerja",
+        "80 cetak foto 5R (pilihan)",
+        "Album magnetik (tempel)",
+        "File foto tanpa batas",
+        "Softcopy di flashdisk",
+        "1 cetak besar 14R + frame"
+      ]
+    },
+    {
+      name: "Paket Resepsi", // Paket Resepsi kedua
+      price: "2.300.000",
+      features: [
+        "1 fotografer & 1 asisten fotografer",
+        "1 hari kerja",
+        "80 cetak foto 5R (pilihan)",
+        "Album magnetik (tempel)",
+        "File foto tanpa batas",
+        "Softcopy di flashdisk",
+        "1 cetak besar 14R + frame"
+      ]
+    },
+    {
+      name: "Akad Nikah & Resepsi",
+      price: "3.000.000",
+      features: [
+        "1 fotografer & 1 asisten fotografer",
+        "2 hari kerja",
+        "80 cetak foto 5R (pilihan)",
+        "Album magnetik (tempel)",
+        "File foto tanpa batas",
+        "Softcopy di flashdisk",
+        "1 cetak besar 14R + frame"
+      ]
+    },
+    {
+      name: "Akad Nikah & Resepsi", // Paket gabungan kedua
+      price: "4.000.000",
+      features: [
+        "1 fotografer & 1 asisten fotografer",
+        "2 hari kerja",
+        "80 cetak foto 5R (pilihan)",
+        "Album magnetik (tempel)",
+        "File foto tanpa batas",
+        "Softcopy di flashdisk",
+        "1 Photo Box",
+        "Cetak besar 14R Jumbo + frame"
+      ]
+    },
+    {
+      name: "Akad Nikah & Resepsi", // Paket gabungan ketiga
+      price: "6.000.000",
+      features: [
+        "2 fotografer & 1 asisten fotografer",
+        "2 hari kerja",
+        "120 cetak foto 5R (pilihan)",
+        "Album hard cover magnetik (tempel)",
+        "File foto tanpa batas",
+        "Softcopy di flashdisk",
+        "1 cetak besar 16R Jumbo + frame"
       ],
-      popular: true
-    },
-    {
-      name: "Enterprise",
-      price: "999K",
-      features: [
-        "Semua fitur Premium",
-        "Custom domain",
-        "API access",
-        "Unlimited events",
-        "Dedicated support"
-      ]
+      popular: true // Contoh: Menandai paket termahal sebagai terpopuler
     }
   ];
 
@@ -64,7 +123,7 @@ export default function PricingSection() {
               <CardHeader className="text-center">
                 <CardTitle className="text-2xl">{plan.name}</CardTitle>
                 <div className="text-4xl font-bold text-wedding-gold">
-                  {plan.price}
+                  IDR {plan.price} {/* Tambahkan prefix IDR */}
                   <span className="text-lg font-normal text-gray-600">/event</span>
                 </div>
               </CardHeader>

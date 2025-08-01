@@ -5,6 +5,7 @@ module.exports = {
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.css", // Penting: Ini memastikan Tailwind memindai globals.css
   ],
   prefix: "",
   theme: {
@@ -17,6 +18,7 @@ module.exports = {
     },
     extend: {
       colors: {
+        // Ini adalah bagian KRUSIAL yang hilang atau salah sebelumnya
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -50,11 +52,12 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // Wedding theme colors
-        'wedding-ivory': 'hsl(var(--wedding-ivory))',
-        'wedding-gold': 'hsl(var(--wedding-gold))',
-        'wedding-rose': 'hsl(var(--wedding-rose))',
-        'wedding-sage': 'hsl(var(--wedding-sage))',
+        // Warna Tema Wedding Kustom Anda, merujuk ke variabel CSS
+        'wedding-ivory': 'var(--wedding-ivory)',
+        'wedding-gold': 'var(--wedding-gold)',
+        'wedding-rose': 'var(--wedding-rose)',
+        'wedding-sage': 'var(--wedding-sage)',
+        'wedding-black': 'var(--wedding-black)',
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -78,5 +81,5 @@ module.exports = {
     },
   },
   plugins: [require("tailwindcss-animate")],
-}
+};
 

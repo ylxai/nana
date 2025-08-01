@@ -1,20 +1,28 @@
-export async function apiRequest(method: string, url: string, data?: any) {
+export async function apiRequest(method: string, url:string, data?: any) {
+  const headers: HeadersInit = {};
   const config: RequestInit = {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers,
   };
 
-  if (data && method !== 'GET') {
+  // Cek jika data yang dikirim adalah FormData (untuk upload file)
+  if (data instanceof FormData) {
+    // JANGAN atur 'Content-Type'. Biarkan browser yang melakukannya.
+    config.body = data;
+  } 
+  // Untuk data JSON biasa (bukan GET)
+  else if (data && method !== 'GET') {
+    headers['Content-Type'] = 'application/json';
     config.body = JSON.stringify(data);
   }
 
   const response = await fetch(url, config);
 
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+    // Coba dapatkan pesan error dari server untuk info yang lebih baik
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
   }
 
   return response;
-} 
+}

@@ -17,7 +17,6 @@ export async function POST(
       );
     }
 
-    // Get event to check access code
     const event = await database.getEventById(eventId);
     
     if (!event) {
@@ -27,7 +26,6 @@ export async function POST(
       );
     }
 
-    // Check if access code matches
     const isValid = event.access_code.toUpperCase() === accessCode.toUpperCase();
     
     if (!isValid) {

@@ -1,4 +1,3 @@
-// file: components/admin/StatsCards.tsx
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Camera, MessageSquare } from "lucide-react";

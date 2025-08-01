@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase'; // Mengimpor supabaseAdmin langsung
 
 export async function PATCH(
   request: NextRequest,
@@ -17,8 +17,7 @@ export async function PATCH(
       );
     }
 
-    // Update photo likes in Supabase
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin // Menggunakan supabaseAdmin langsung
       .from('photos')
       .update({ likes })
       .eq('id', photoId)

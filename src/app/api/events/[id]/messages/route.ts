@@ -1,51 +1,61 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { database } from '@/lib/database';
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const eventId = params.id;
+
+  if (!eventId) {
+    return NextResponse.json({ error: "Event ID is required" }, { status: 400 });
+  }
+
+  try {
+    const messages = await database.getEventMessages(eventId);
+    return NextResponse.json(messages);
+  } catch (error: any) {
+    console.error("Get messages error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch messages", details: error.message },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  try {
-    const eventId = params.id;
-    const body = await request.json();
+  const eventId = params.id;
 
-    if (!body.guestName || !body.message) {
+  if (!eventId) {
+    return NextResponse.json({ error: "Event ID is required" }, { status: 400 });
+  }
+
+  try {
+    const body = await request.json();
+    const { guestName, message } = body;
+
+    if (!guestName || !message) {
       return NextResponse.json(
         { message: "Guest name and message are required" },
         { status: 400 }
       );
     }
 
-    const message = await database.createMessage({
+    const newMessage = await database.createMessage({
       event_id: eventId,
-      guest_name: body.guestName,
-      message: body.message,
+      guest_name: guestName,
+      message: message,
     });
 
-    return NextResponse.json(message);
+    return NextResponse.json(newMessage, { status: 201 });
   } catch (error: any) {
-    console.error('Create message error:', error);
+    console.error(`Create message for event ${eventId} error:`, error);
     return NextResponse.json(
       { message: "Failed to create message", error: error.message },
-      { status: 400 }
-    );
-  }
-}
-
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const eventId = params.id;
-    const messages = await database.getEventMessages(eventId);
-    
-    return NextResponse.json(messages);
-  } catch (error: any) {
-    console.error('Get messages error:', error);
-    return NextResponse.json(
-      { message: "Failed to fetch messages", error: error.message },
-      { status: 400 }
+      { status: 500 }
     );
   }
 }

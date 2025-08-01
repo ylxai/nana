@@ -1,23 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { database } from '@/lib/database';
+import { database } from '@/lib/database'; // Mengimpor database langsung
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const eventId = params.id;
+
+  if (!eventId) {
+    return NextResponse.json({ error: "Event ID is required" }, { status: 400 });
+  }
+
   try {
-    const event = await database.getEventById(params.id);
+    const event = await database.getEventById(eventId); // Menggunakan database langsung
+
     if (!event) {
-      return NextResponse.json(
-        { message: "Event not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
+
     return NextResponse.json(event);
   } catch (error: any) {
-    console.error('Get event error:', error);
+    console.error("Get event error:", error);
     return NextResponse.json(
-      { message: "Failed to get event", error: error.message },
+      { error: "Failed to fetch event", details: error.message },
       { status: 500 }
     );
   }
@@ -31,28 +36,19 @@ export async function PUT(
     const eventId = params.id;
     const body = await request.json();
     
-    const { name, date, access_code, is_premium } = body;
-    
-    if (!name || !date || !access_code) {
-      return NextResponse.json(
-        { message: "Missing required fields" },
-        { status: 400 }
-      );
-    }
-
-    const updatedEvent = await database.updateEvent(eventId, {
-      name,
-      date,
-      access_code,
-      is_premium: is_premium || false,
+    const updatedEvent = await database.updateEvent(eventId, { // Menggunakan database langsung
+      name: body.name,
+      date: body.date,
+      access_code: body.accessCode || body.access_code,
+      is_premium: body.isPremium || body.is_premium,
     });
-
+    
     return NextResponse.json(updatedEvent);
   } catch (error: any) {
     console.error('Update event error:', error);
     return NextResponse.json(
       { message: "Failed to update event", error: error.message },
-      { status: 500 }
+      { status: 400 }
     );
   }
 }
@@ -64,15 +60,14 @@ export async function DELETE(
   try {
     const eventId = params.id;
     
-    // Delete the event (this will also delete associated photos and messages)
-    await database.deleteEvent(eventId);
+    await database.deleteEvent(eventId); // Menggunakan database langsung
     
     return NextResponse.json({ message: "Event deleted successfully" });
   } catch (error: any) {
     console.error('Delete event error:', error);
     return NextResponse.json(
       { message: "Failed to delete event", error: error.message },
-      { status: 500 }
+      { status: 400 }
     );
   }
 } 

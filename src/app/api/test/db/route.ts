@@ -3,7 +3,6 @@ import { database } from '@/lib/database';
 
 export async function GET() {
   try {
-    // Test database connection by getting stats
     const stats = await database.getStats();
     
     return NextResponse.json({ 

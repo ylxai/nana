@@ -7,6 +7,7 @@ export const supabase = createClient(
 );
 
 // Create Supabase admin client for server-side operations
+// Pastikan ini diekspor langsung agar 'database' bisa menggunakannya
 export const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -19,7 +20,7 @@ export const supabaseAdmin = createClient(
 );
 
 // Storage bucket name
-export const STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET || 'hafiportrait-photos';
+export const STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET || 'photos'; // Menggunakan default 'photos'
 
 // Upload file to Supabase Storage
 export async function uploadFile(file: File, path: string): Promise<string> {

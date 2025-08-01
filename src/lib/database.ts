@@ -1,259 +1,278 @@
-import { supabaseAdmin } from './supabase';
+import { supabaseAdmin } from './supabase'; // Pastikan ini diimpor dengan benar
 
-// Database table types
-export interface Event {
+// Definisi Tipe Data untuk konsistensi
+export type Event = {
   id: string;
   name: string;
   date: string;
-  qr_code: string;
-  shareable_link: string;
-  access_code: string;
+  access_code: string | null;
   is_premium: boolean;
-  created_at: string;
-}
+  qr_code: string | null;
+  shareable_link: string | null;
+};
 
-export interface Photo {
+export type Photo = {
   id: string;
-  event_id: string;
-  filename: string;
-  original_name: string;
+  event_id?: string | null; // Opsional karena bisa jadi foto homepage
   url: string;
-  uploader_name: string | null;
+  thumbnail_url: string | null;
   uploaded_at: string;
-  album_name: string | null;
-  likes: number | null;
-}
+  is_homepage: boolean | null; // Tambahkan ini jika belum ada
+};
 
-export interface Message {
+export type Message = {
   id: string;
   event_id: string;
-  guest_name: string;
-  message: string;
-  hearts: number | null;
-  created_at: string;
-}
+  sender_name: string;
+  content: string;
+  sent_at: string;
+  hearts: number;
+};
 
-export class DatabaseService {
-  // ========== EVENTS ==========
-  async createEvent(eventData: {
-    name: string;
-    date: string;
-    access_code?: string;
-    is_premium?: boolean;
-  }): Promise<Event> {
-    const eventId = crypto.randomUUID();
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    
-    // Generate QR Code and share link
-    const shareableLink = `${baseUrl}/event/${eventId}`;
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(shareableLink)}`;
-    
-    const { data, error } = await supabaseAdmin
+export type Stats = {
+  totalEvents: number;
+  totalPhotos: number;
+  totalMessages: number;
+};
+
+class DatabaseService {
+  private supabase: typeof supabaseAdmin;
+
+  constructor() {
+    this.supabase = supabaseAdmin;
+  }
+
+  // --- Metode Event ---
+  async getAllEvents(): Promise<Event[]> {
+    const { data, error } = await this.supabase
       .from('events')
-      .insert({
-        id: eventId,
-        name: eventData.name,
-        date: eventData.date,
-        qr_code: qrCodeUrl,
-        shareable_link: shareableLink,
-        access_code: eventData.access_code || 'GUEST',
-        is_premium: eventData.is_premium || false,
-      })
-      .select()
-      .single();
+      .select('*')
+      .order('date', { ascending: false });
+    if (error) throw error;
+    return data;
+  }
 
-    if (error) throw new Error(`Create event failed: ${error.message}`);
+  async getPublicEvents(): Promise<Event[]> {
+    const { data, error } = await this.supabase
+      .from('events')
+      .select('id, name, date, is_premium, qr_code, shareable_link')
+      .is('is_premium', false) // Asumsi hanya event non-premium yang publik, sesuaikan jika perlu
+      .order('date', { ascending: false });
+    if (error) throw error;
     return data;
   }
 
   async getEventById(id: string): Promise<Event | null> {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await this.supabase
       .from('events')
       .select('*')
       .eq('id', id)
       .single();
-
-    if (error && error.code !== 'PGRST116') {
-      throw new Error(`Get event failed: ${error.message}`);
-    }
+    if (error) throw error;
     return data;
   }
 
-  async getAllEvents(): Promise<Event[]> {
-    const { data, error } = await supabaseAdmin
+  async createEvent(event: Omit<Event, 'id' | 'qr_code' | 'shareable_link'>): Promise<Event> {
+    const { data, error } = await this.supabase
       .from('events')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) throw new Error(`Get events failed: ${error.message}`);
-    return data || [];
+      .insert(event)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
   }
 
-  async updateEvent(id: string, eventData: Partial<Event>): Promise<Event> {
-    const { data, error } = await supabaseAdmin
+  async updateEvent(id: string, updates: Partial<Event>): Promise<Event> {
+    const { data, error } = await this.supabase
       .from('events')
-      .update(eventData)
+      .update(updates)
       .eq('id', id)
       .select()
       .single();
-
-    if (error) throw new Error(`Update event failed: ${error.message}`);
+    if (error) throw error;
     return data;
   }
 
   async deleteEvent(id: string): Promise<void> {
-    // Delete associated photos first
-    await supabaseAdmin.from('photos').delete().eq('event_id', id);
-    
-    // Delete associated messages
-    await supabaseAdmin.from('messages').delete().eq('event_id', id);
-    
-    // Delete event
-    const { error } = await supabaseAdmin.from('events').delete().eq('id', id);
-    if (error) throw new Error(`Delete event failed: ${error.message}`);
+    const { error } = await this.supabase
+      .from('events')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
   }
 
-  // ========== PHOTOS ==========
-  async createPhoto(photoData: {
-    event_id: string;
-    filename: string;
-    original_name: string;
-    url: string;
-    uploader_name?: string;
-    album_name?: string;
-  }): Promise<Photo> {
-    const { data, error } = await supabaseAdmin
-      .from('photos')
-      .insert({
-        id: crypto.randomUUID(),
-        event_id: photoData.event_id,
-        filename: photoData.filename,
-        original_name: photoData.original_name,
-        url: photoData.url,
-        uploader_name: photoData.uploader_name || null,
-        album_name: photoData.album_name || 'Tamu',
-        likes: 0,
-      })
-      .select()
+  async verifyEventAccessCode(eventId: string, code: string): Promise<boolean> {
+    const { data, error } = await this.supabase
+      .from('events')
+      .select('id')
+      .eq('id', eventId)
+      .eq('access_code', code)
       .single();
-
-    if (error) throw new Error(`Create photo failed: ${error.message}`);
-    return data;
+    if (error) {
+      console.error('Error verifying access code:', error);
+      return false;
+    }
+    return !!data;
   }
 
+  // --- Metode Foto ---
   async getEventPhotos(eventId: string): Promise<Photo[]> {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await this.supabase
       .from('photos')
       .select('*')
       .eq('event_id', eventId)
       .order('uploaded_at', { ascending: false });
-
-    if (error) throw new Error(`Get photos failed: ${error.message}`);
-    return data || [];
+    if (error) throw error;
+    return data;
   }
 
   async getHomepagePhotos(): Promise<Photo[]> {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await this.supabase
       .from('photos')
       .select('*')
-      .eq('event_id', 'homepage')
+      .eq('is_homepage', true) // Asumsi kolom ini ada di tabel photos
       .order('uploaded_at', { ascending: false });
-
-    if (error) throw new Error(`Get homepage photos failed: ${error.message}`);
-    return data || [];
-  }
-
-  async getPhotoById(id: string): Promise<Photo | null> {
-    const { data, error } = await supabaseAdmin
-      .from('photos')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      throw new Error(`Get photo failed: ${error.message}`);
+    if (error) {
+      // Log error yang lebih spesifik jika kolom tidak ditemukan
+      if (error.code === '42P01') { // PostgreSQL error code for undefined_table
+        console.error("Database Error: Column 'is_homepage' does not exist. Please add it to your 'photos' table.");
+      }
+      throw error;
     }
     return data;
   }
 
-  async deletePhoto(id: string): Promise<void> {
-    const { error } = await supabaseAdmin.from('photos').delete().eq('id', id);
-    if (error) throw new Error(`Delete photo failed: ${error.message}`);
-  }
+  async uploadPhoto(eventId: string, file: File): Promise<Photo> {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `${eventId}/${fileName}`;
 
-  async getRecentPhotos(limit: number = 8): Promise<Photo[]> {
-    const { data, error } = await supabaseAdmin
+    const { data: uploadData, error: uploadError } = await this.supabase.storage
+      .from('event_photos')
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data: publicUrlData } = this.supabase.storage
+      .from('event_photos')
+      .getPublicUrl(uploadData.path);
+
+    const { data: photoData, error: insertError } = await this.supabase
       .from('photos')
-      .select('*')
-      .order('uploaded_at', { ascending: false })
-      .limit(limit);
-
-    if (error) throw new Error(`Get recent photos failed: ${error.message}`);
-    return data || [];
-  }
-
-  // ========== MESSAGES ==========
-  async createMessage(messageData: {
-    event_id: string;
-    guest_name: string;
-    message: string;
-  }): Promise<Message> {
-    const { data, error } = await supabaseAdmin
-      .from('messages')
-      .insert({
-        id: crypto.randomUUID(),
-        event_id: messageData.event_id,
-        guest_name: messageData.guest_name,
-        message: messageData.message,
-        hearts: 0,
-      })
+      .insert({ event_id: eventId, url: publicUrlData.publicUrl, thumbnail_url: publicUrlData.publicUrl }) // Menggunakan url yang sama untuk thumbnail
       .select()
       .single();
 
-    if (error) throw new Error(`Create message failed: ${error.message}`);
-    return data;
+    if (insertError) throw insertError;
+    return photoData;
   }
 
+  async uploadHomepagePhoto(file: File): Promise<Photo> {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `homepage/${fileName}`;
+
+    const { data: uploadData, error: uploadError } = await this.supabase.storage
+      .from('homepage_photos') // Pastikan bucket ini ada di Supabase Anda
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data: publicUrlData } = this.supabase.storage
+      .from('homepage_photos')
+      .getPublicUrl(uploadData.path);
+
+    const { data: photoData, error: insertError } = await this.supabase
+      .from('photos')
+      .insert({ url: publicUrlData.publicUrl, thumbnail_url: publicUrlData.publicUrl, is_homepage: true })
+      .select()
+      .single();
+
+    if (insertError) throw insertError;
+    return photoData;
+  }
+
+
+  async deletePhoto(photoId: string): Promise<void> {
+    const { data, error: fetchError } = await this.supabase
+      .from('photos')
+      .select('url, event_id')
+      .eq('id', photoId)
+      .single();
+
+    if (fetchError) throw fetchError;
+    if (!data) throw new Error('Photo not found');
+
+    const filePath = data.url.split('/').pop(); // Asumsi path terakhir adalah nama file
+    const bucketName = data.event_id ? 'event_photos' : 'homepage_photos'; // Tentukan bucket
+
+    const { error: deleteStorageError } = await this.supabase.storage
+      .from(bucketName)
+      .remove([`${data.event_id || 'homepage'}/${filePath}`]); // Path lengkap di bucket
+
+    if (deleteStorageError) console.error('Error deleting file from storage:', deleteStorageError);
+
+    const { error: deleteDbError } = await this.supabase
+      .from('photos')
+      .delete()
+      .eq('id', photoId);
+
+    if (deleteDbError) throw deleteDbError;
+  }
+
+  async likePhoto(photoId: string): Promise<void> {
+    const { data, error } = await this.supabase.rpc('increment_likes', { photo_id: photoId }); // Panggil fungsi RPC
+    if (error) throw error;
+  }
+
+
+  // --- Metode Pesan ---
   async getEventMessages(eventId: string): Promise<Message[]> {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await this.supabase
       .from('messages')
       .select('*')
       .eq('event_id', eventId)
-      .order('created_at', { ascending: false });
-
-    if (error) throw new Error(`Get messages failed: ${error.message}`);
-    return data || [];
+      .order('sent_at', { ascending: false });
+    if (error) throw error;
+    return data;
   }
 
-  async updateMessageHearts(id: string, hearts: number): Promise<void> {
-    const { error } = await supabaseAdmin
+  async createMessage(message: Omit<Message, 'id' | 'sent_at' | 'hearts'>): Promise<Message> {
+    const { data, error } = await this.supabase
       .from('messages')
-      .update({ hearts })
-      .eq('id', id);
-
-    if (error) throw new Error(`Update message hearts failed: ${error.message}`);
+      .insert(message)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
   }
 
-  // ========== STATS ==========
-  async getStats(): Promise<{
-    totalEvents: number;
-    totalPhotos: number;
-    totalMessages: number;
-  }> {
-    const [eventsResult, photosResult, messagesResult] = await Promise.all([
-      supabaseAdmin.from('events').select('id', { count: 'exact', head: true }),
-      supabaseAdmin.from('photos').select('id', { count: 'exact', head: true }),
-      supabaseAdmin.from('messages').select('id', { count: 'exact', head: true }),
-    ]);
+  async heartMessage(messageId: string): Promise<void> {
+    const { data, error } = await this.supabase.rpc('increment_hearts', { message_id: messageId }); // Panggil fungsi RPC
+    if (error) throw error;
+  }
 
-    if (eventsResult.error) throw new Error(`Get events count failed: ${eventsResult.error.message}`);
-    if (photosResult.error) throw new Error(`Get photos count failed: ${photosResult.error.message}`);
-    if (messagesResult.error) throw new Error(`Get messages count failed: ${messagesResult.error.message}`);
+  // --- Metode Statistik ---
+  async getStats(): Promise<Stats> {
+    const { count: totalEvents, error: eventsError } = await this.supabase
+      .from('events')
+      .select('*', { count: 'exact', head: true });
+    if (eventsError) throw eventsError;
+
+    const { count: totalPhotos, error: photosError } = await this.supabase
+      .from('photos')
+      .select('*', { count: 'exact', head: true });
+    if (photosError) throw photosError;
+
+    const { count: totalMessages, error: messagesError } = await this.supabase
+      .from('messages')
+      .select('*', { count: 'exact', head: true });
+    if (messagesError) throw messagesError;
 
     return {
-      totalEvents: eventsResult.count || 0,
-      totalPhotos: photosResult.count || 0,
-      totalMessages: messagesResult.count || 0,
+      totalEvents: totalEvents || 0,
+      totalPhotos: totalPhotos || 0,
+      totalMessages: totalMessages || 0,
     };
   }
 }
